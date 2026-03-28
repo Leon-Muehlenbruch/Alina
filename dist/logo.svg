@@ -1,0 +1,8 @@
+<svg width="500" height="500" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+  <path d="M250 120 C180 120 125 170 125 235 C125 258 132 278 145 295 L135 330 L175 315 C195 325 220 330 250 330 C320 330 375 285 375 225 C375 165 320 120 250 120" 
+        fill="none" stroke="#B38463" stroke-width="5" />
+  <circle cx="355" cy="165" r="6" fill="#B38463" />
+  <circle cx="215" cy="225" r="7" fill="#B38463" />
+  <circle cx="285" cy="225" r="7" fill="#B38463" />
+  <text x="250" y="420" text-anchor="middle" font-family="sans-serif" font-weight="100" font-size="75" letter-spacing="4" fill="#B38463">alina</text>
+</svg>
