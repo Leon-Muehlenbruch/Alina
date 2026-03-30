@@ -26,7 +26,7 @@ export function MessageList({ onImageClick }: MessageListProps) {
   return (
     <div className="chat-messages" ref={containerRef}>
       {chatMessages.length === 0 && (
-        <div className="msg-system">Start of conversation. Everything encrypted.</div>
+        <div className="msg-system">Beginn des Gesprächs · Ende-zu-Ende verschlüsselt</div>
       )}
       {chatMessages.map((msg, i) => {
         const isMine = msg.pubkey === identity?.pubkey

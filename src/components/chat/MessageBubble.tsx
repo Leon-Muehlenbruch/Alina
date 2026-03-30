@@ -1,3 +1,4 @@
+import { MapPin } from 'lucide-react'
 import type { Message } from '../../store/useStore'
 import { formatTime } from '../../lib/utils'
 
@@ -41,7 +42,7 @@ function LocationBubble({ content, isMine }: { content: string; isMine: boolean 
     const data = JSON.parse(content)
     return (
       <div className="msg-bubble location-msg">
-        <span className="location-icon">📍</span>
+        <MapPin size={18} style={{ flexShrink: 0 }} />
         <div>
           <div className="location-words">{data.words}</div>
           <a
@@ -50,7 +51,7 @@ function LocationBubble({ content, isMine }: { content: string; isMine: boolean 
             target="_blank"
             rel="noopener noreferrer"
           >
-            what3words öffnen ↗
+            In Karte öffnen ↗
           </a>
         </div>
       </div>
