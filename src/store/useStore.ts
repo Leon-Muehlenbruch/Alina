@@ -46,6 +46,8 @@ interface AppState {
   contacts: Record<string, Contact>
   addContact: (pubkey: string, name: string) => void
   ensureContact: (pubkey: string, name: string) => void
+  renameContact: (pubkey: string, name: string) => void
+  deleteContact: (pubkey: string) => void
 
   // Rooms
   rooms: Record<string, Room>
@@ -63,6 +65,10 @@ interface AppState {
   unread: Record<string, number>
   clearUnread: (chatId: string) => void
   incrementUnread: (chatId: string) => void
+
+  // Relay status
+  relayCount: number
+  setRelayCount: (n: number) => void
 
   // UI
   openModal: string | null
@@ -141,6 +147,37 @@ export const useStore = create<AppState>((set, get) => ({
     set({ contacts: updated })
   },
 
+  renameContact: (pubkey, name) => {
+    const { contacts } = get()
+    if (!contacts[pubkey]) return
+    const updated = { ...contacts, [pubkey]: { ...contacts[pubkey], name } }
+    storage.saveContacts(updated)
+    set({ contacts: updated })
+  },
+
+  deleteContact: (pubkey) => {
+    const { contacts, messages, unread, activeChat } = get()
+    const updatedContacts = { ...contacts }
+    delete updatedContacts[pubkey]
+    storage.saveContacts(updatedContacts)
+
+    const chatId = 'dm:' + pubkey
+    const updatedMessages = { ...messages }
+    delete updatedMessages[chatId]
+    storage.saveMessages(updatedMessages)
+
+    const updatedUnread = { ...unread }
+    delete updatedUnread[chatId]
+    storage.saveUnread(updatedUnread)
+
+    set({
+      contacts: updatedContacts,
+      messages: updatedMessages,
+      unread: updatedUnread,
+      activeChat: activeChat?.chatId === chatId ? null : activeChat,
+    })
+  },
+
   // Rooms
   rooms: storage.loadRooms(),
 
@@ -198,6 +235,10 @@ export const useStore = create<AppState>((set, get) => ({
     storage.saveUnread(updated)
     set({ unread: updated })
   },
+
+  // Relay status
+  relayCount: 0,
+  setRelayCount: (n) => set({ relayCount: n }),
 
   // UI
   openModal: null,
