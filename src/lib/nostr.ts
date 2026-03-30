@@ -1,5 +1,5 @@
-import { RELAYS, RECONNECT_DELAY } from './constants'
-import { createSignedEvent, isValidEvent, encryptDM, decryptDM } from './crypto'
+import { RELAYS, RECONNECT_DELAY, INVITE_KIND, INVITE_CODE_DURATION } from './constants'
+import { createSignedEvent, isValidEvent, encryptDM, decryptDM, hashInviteCode } from './crypto'
 import type { Message } from '../store/useStore'
 
 export interface RelayConnection {
@@ -9,6 +9,10 @@ export interface RelayConnection {
 
 let relays: RelayConnection[] = []
 let onMessageCallback: ((chatId: string, msg: Message) => void) | null = null
+
+type InviteResult = { pubkey: string; name: string }
+const pendingInviteLookups = new Map<string, (result: InviteResult | null) => void>()
+
 let getStateCallback: (() => {
   privkey: Uint8Array | null
   pubkey: string | null
@@ -26,6 +30,21 @@ export function setGetState(cb: typeof getStateCallback): void {
 
 export function getRelays(): RelayConnection[] {
   return relays
+}
+
+export function getRelayCount(): number {
+  return relays.length
+}
+
+type RelayCountListener = (count: number) => void
+let relayCountListener: RelayCountListener | null = null
+
+export function setRelayCountListener(cb: RelayCountListener | null): void {
+  relayCountListener = cb
+}
+
+function notifyRelayCount(): void {
+  relayCountListener?.(relays.length)
 }
 
 function subscribeAll(ws: WebSocket): void {
@@ -49,12 +68,14 @@ function connectRelay(url: string): void {
     const ws = new WebSocket(url)
     ws.onopen = () => {
       relays.push({ url, ws })
+      notifyRelayCount()
       subscribeAll(ws)
     }
     ws.onmessage = (e) => handleRelayMessage(e.data)
     ws.onerror = () => {}
     ws.onclose = () => {
       relays = relays.filter(r => r.url !== url)
+      notifyRelayCount()
       setTimeout(() => connectRelay(url), RECONNECT_DELAY)
     }
   } catch { /* ignore */ }
@@ -69,6 +90,7 @@ export function disconnectAllRelays(): void {
     try { r.ws.close() } catch { /* ignore */ }
   })
   relays = []
+  notifyRelayCount()
 }
 
 export function publishToRelays(event: object): void {
@@ -94,14 +116,34 @@ export function resubscribeAll(): void {
 async function handleRelayMessage(raw: string): Promise<void> {
   try {
     const data = JSON.parse(raw)
-    if (data[0] !== 'EVENT') return
-    const event = data[2]
-    if (!isValidEvent(event)) return
 
-    if (event.kind === 4) {
-      await handleDM(event)
-    } else if (event.kind === 42) {
-      handleRoomMsg(event)
+    if (data[0] === 'EVENT') {
+      const subId = data[1] as string
+      const event = data[2]
+
+      // Handle invite lookup responses
+      const inviteHandler = pendingInviteLookups.get(subId)
+      if (inviteHandler && event.kind === INVITE_KIND) {
+        pendingInviteLookups.delete(subId)
+        relays.forEach(r => {
+          try { r.ws.send(JSON.stringify(['CLOSE', subId])) } catch { /* ignore */ }
+        })
+        try {
+          const parsed = JSON.parse(event.content)
+          inviteHandler({ pubkey: event.pubkey, name: parsed.name || '' })
+        } catch {
+          inviteHandler(null)
+        }
+        return
+      }
+
+      if (!isValidEvent(event)) return
+
+      if (event.kind === 4) {
+        await handleDM(event)
+      } else if (event.kind === 42) {
+        handleRoomMsg(event)
+      }
     }
   } catch { /* ignore */ }
 }
@@ -173,6 +215,62 @@ export async function publishDM(
     pubkey: myPubkey,
   }, privkey)
   publishToRelays(event)
+}
+
+export async function publishInviteCode(
+  privkey: Uint8Array,
+  pubkey: string,
+  name: string,
+  code: string,
+): Promise<void> {
+  const codeHash = await hashInviteCode(code)
+  const expiration = Math.floor(Date.now() / 1000) + INVITE_CODE_DURATION
+  const event = createSignedEvent({
+    kind: INVITE_KIND,
+    created_at: Math.floor(Date.now() / 1000),
+    tags: [
+      ['t', codeHash],
+      ['expiration', expiration.toString()],
+    ],
+    content: JSON.stringify({ name }),
+    pubkey,
+  }, privkey)
+  publishToRelays(event)
+}
+
+export async function lookupInviteCode(code: string): Promise<InviteResult | null> {
+  const codeHash = await hashInviteCode(code)
+
+  return new Promise((resolve) => {
+    const subId = 'invite-' + Math.random().toString(36).slice(2, 10)
+    let resolved = false
+
+    const done = (result: InviteResult | null) => {
+      if (resolved) return
+      resolved = true
+      pendingInviteLookups.delete(subId)
+      resolve(result)
+    }
+
+    pendingInviteLookups.set(subId, done)
+    setTimeout(() => done(null), 8000)
+
+    const sub = JSON.stringify(['REQ', subId, {
+      kinds: [INVITE_KIND],
+      '#t': [codeHash],
+      since: Math.floor(Date.now() / 1000) - INVITE_CODE_DURATION,
+      limit: 5,
+    }])
+
+    if (relays.length === 0) {
+      setTimeout(() => done(null), 100)
+      return
+    }
+
+    relays.forEach(r => {
+      try { r.ws.send(sub) } catch { /* ignore */ }
+    })
+  })
 }
 
 export async function publishRoomMessage(

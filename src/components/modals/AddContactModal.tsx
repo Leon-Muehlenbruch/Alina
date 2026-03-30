@@ -1,7 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { ArrowLeft, Copy, Check, UserPlus, KeyRound } from 'lucide-react'
 import { useStore } from '../../store/useStore'
-import { useInviteCode } from '../../hooks/useInviteCode'
-import { resubscribeAll } from '../../lib/nostr'
+import { publishInviteCode, lookupInviteCode, resubscribeAll } from '../../lib/nostr'
+import { INVITE_CODE_DURATION } from '../../lib/constants'
+
+type View = 'invite' | 'join'
+type LookupState = 'idle' | 'searching' | 'found' | 'not_found'
 
 export function AddContactModal() {
   const setOpenModal = useStore(s => s.setOpenModal)
@@ -9,132 +13,273 @@ export function AddContactModal() {
   const showStatus = useStore(s => s.showStatus)
   const identity = useStore(s => s.identity)
 
-  const [mode, setMode] = useState<'invite' | 'join'>('invite')
-  const [nameInvite, setNameInvite] = useState('')
-  const [nameJoin, setNameJoin] = useState('')
-  const [recvCode, setRecvCode] = useState('')
-  const [advancedOpen, setAdvancedOpen] = useState(false)
-  const [advPubkey, setAdvPubkey] = useState('')
-  const [advName, setAdvName] = useState('')
+  const [view, setView] = useState<View>('invite')
 
-  const { code, timerText, generate } = useInviteCode(identity?.pubkey ?? '', identity?.name ?? '')
+  // Invite
+  const [inviteName, setInviteName] = useState('')
+  const [code, setCode] = useState<string | null>(null)
+  const [remaining, setRemaining] = useState(0)
+  const [publishing, setPublishing] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Join
+  const [joinCode, setJoinCode] = useState('')
+  const [inviterName, setInviterName] = useState('')   // pre-filled from relay event
+  const [inviterPubkey, setInviterPubkey] = useState('')
+  const [joinName, setJoinName] = useState('')         // editable by joiner
+  const [lookupState, setLookupState] = useState<LookupState>('idle')
+  const [lookupDone, setLookupDone] = useState(false)
 
   const close = () => setOpenModal(null)
 
-  const handleAdd = () => {
-    if (mode === 'join') {
-      if (!recvCode || recvCode.length !== 6) { alert('Please enter the 6-digit code you received.'); return }
-      if (!nameJoin.trim()) { alert('Please enter a name for this contact.'); return }
-      showStatus('Code saved. When your contact messages you, they will appear here automatically.', 3000)
-      close()
-      return
-    }
+  useEffect(() => () => { if (intervalRef.current) clearInterval(intervalRef.current) }, [])
 
-    // Invite mode
-    if (!advPubkey) {
-      if (!nameInvite.trim()) { alert('Please enter a name so you recognise your contact when they appear.'); return }
-      showStatus('Waiting for your contact to enter the code. They will appear here automatically.', 4000)
-      close()
-      return
-    }
+  const startCountdown = () => {
+    setRemaining(INVITE_CODE_DURATION)
+    if (intervalRef.current) clearInterval(intervalRef.current)
+    intervalRef.current = setInterval(() => {
+      setRemaining(prev => {
+        if (prev <= 1) {
+          if (intervalRef.current) clearInterval(intervalRef.current)
+          setCode(null)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+  }
 
-    // Advanced: direct pubkey
-    if (!advName.trim()) { alert('Please enter a name for this contact.'); return }
+  const generateCode = async () => {
+    if (!identity || !inviteName.trim()) return
+    setPublishing(true)
+    const newCode = Math.floor(100000 + Math.random() * 900000).toString()
     try {
-      addContact(advPubkey, advName.trim())
-      resubscribeAll()
-      showStatus(`${advName.trim()} added!`, 2000)
-      close()
+      await publishInviteCode(identity.privkey, identity.pubkey, identity.name, newCode)
+      setCode(newCode)
+      startCountdown()
     } catch {
-      alert('Invalid public key.')
+      alert('Code konnte nicht erstellt werden.')
+    } finally {
+      setPublishing(false)
     }
   }
 
+  const copyCode = () => {
+    if (!code) return
+    navigator.clipboard.writeText(code).catch(() => {})
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  // Auto-lookup once 6 digits are entered
+  useEffect(() => {
+    if (joinCode.length !== 6 || lookupDone) return
+    setLookupState('searching')
+    lookupInviteCode(joinCode).then(result => {
+      setLookupDone(true)
+      if (!result) {
+        setLookupState('not_found')
+      } else {
+        setInviterName(result.name)
+        setInviterPubkey(result.pubkey)
+        setJoinName(result.name) // pre-fill with inviter's name
+        setLookupState('found')
+      }
+    })
+  }, [joinCode, lookupDone])
+
+  const resetJoin = () => {
+    setJoinCode('')
+    setJoinName('')
+    setInviterName('')
+    setInviterPubkey('')
+    setLookupState('idle')
+    setLookupDone(false)
+  }
+
+  const handleConfirm = () => {
+    if (lookupState !== 'found' || !joinName.trim() || !inviterPubkey) return
+    addContact(inviterPubkey, joinName.trim())
+    resubscribeAll()
+    showStatus(`${joinName.trim()} hinzugefügt!`, 3000)
+    close()
+  }
+
+  const m = Math.floor(remaining / 60).toString().padStart(2, '0')
+  const s = (remaining % 60).toString().padStart(2, '0')
+
+  // ── JOIN VIEW ──
+  if (view === 'join') {
+    return (
+      <div className="modal-overlay open" onClick={e => e.target === e.currentTarget && close()}>
+        <div className="modal">
+          <button className="modal-back-btn" onClick={() => { setView('invite'); resetJoin() }}>
+            <ArrowLeft size={15} /> Zurück
+          </button>
+
+          <div className="modal-title">Code eingeben</div>
+
+          {/* Code input — always visible */}
+          <div>
+            <div className="setup-label">6-stelliger Code</div>
+            <input
+              type="text"
+              inputMode="numeric"
+              placeholder="123 456"
+              maxLength={6}
+              value={joinCode}
+              onChange={e => {
+                const val = e.target.value.replace(/\D/g, '')
+                setJoinCode(val)
+                if (val.length < 6) { setLookupState('idle'); setLookupDone(false); setInviterName(''); setJoinName('') }
+              }}
+              style={{ letterSpacing: '0.5em', fontSize: '1.8rem', textAlign: 'center', fontFamily: 'monospace' }}
+              autoFocus
+              disabled={lookupState === 'searching'}
+            />
+          </div>
+
+          {/* Searching indicator */}
+          {lookupState === 'searching' && (
+            <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: '0.85rem', padding: '0.5rem 0' }}>
+              Suche läuft…
+            </div>
+          )}
+
+          {/* Not found */}
+          {lookupState === 'not_found' && (
+            <div style={{ fontSize: '0.82rem', color: '#e07070', background: '#2a1818', border: '1px solid #5a2a2a', borderRadius: 8, padding: '0.7rem 0.9rem' }}>
+              Code nicht gefunden oder abgelaufen. Bitte einen neuen Code anfordern.
+            </div>
+          )}
+
+          {/* Found — show inviter info + name field */}
+          {lookupState === 'found' && (
+            <>
+              <div style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 10, padding: '1rem', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  Einladung von
+                </div>
+                <div style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--accent)' }}>
+                  {inviterName || 'Unbekannt'}
+                </div>
+              </div>
+
+              <div>
+                <div className="setup-label">Unter welchem Namen speichern?</div>
+                <input
+                  type="text"
+                  value={joinName}
+                  onChange={e => setJoinName(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleConfirm()}
+                  maxLength={30}
+                  placeholder={inviterName}
+                  autoFocus
+                />
+                <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.4rem' }}>
+                  Du kannst den Namen jederzeit ändern.
+                </div>
+              </div>
+
+              <button
+                className="btn"
+                style={{ width: '100%' }}
+                onClick={handleConfirm}
+                disabled={!joinName.trim()}
+              >
+                Hinzufügen
+              </button>
+            </>
+          )}
+
+          <button className="btn secondary" style={{ width: '100%' }} onClick={close}>Abbrechen</button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── INVITE VIEW ──
   return (
     <div className="modal-overlay open" onClick={e => e.target === e.currentTarget && close()}>
       <div className="modal">
-        <div className="modal-title">Add a contact</div>
-        <div className="modal-subtitle">Choose how to connect — both of you need alina open.</div>
-
-        <div style={{ display: 'flex', border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden', marginBottom: '1rem' }}>
-          <button
-            onClick={() => { setMode('invite'); generate() }}
-            style={{
-              flex: 1, padding: '0.65rem', border: 'none', fontFamily: 'var(--font-body)', fontSize: '0.82rem', cursor: 'pointer',
-              background: mode === 'invite' ? 'var(--accent)' : 'var(--surface2)',
-              color: mode === 'invite' ? '#1a1410' : 'var(--text)',
-              fontWeight: mode === 'invite' ? 500 : 400,
-            }}
-          >
-            I want to invite
-          </button>
-          <button
-            onClick={() => setMode('join')}
-            style={{
-              flex: 1, padding: '0.65rem', border: 'none', fontFamily: 'var(--font-body)', fontSize: '0.82rem', cursor: 'pointer',
-              background: mode === 'join' ? 'var(--accent)' : 'var(--surface2)',
-              color: mode === 'join' ? '#1a1410' : 'var(--text)',
-              fontWeight: mode === 'join' ? 500 : 400,
-            }}
-          >
-            I got a code
-          </button>
+        <div className="modal-title">Jemanden einladen</div>
+        <div className="modal-subtitle">
+          Gib einen Namen ein, erstelle einen Code und schick ihn per WhatsApp oder SMS.
         </div>
 
-        {mode === 'invite' ? (
-          <div>
-            <div className="warning-box" style={{ background: '#1a2018', borderColor: '#2e4a2a', color: '#8fba8a', marginBottom: '1rem', fontSize: '0.82rem', lineHeight: 1.6 }}>
-              You generate a code → send it via SMS or Signal → your contact enters it on the "I got a code" tab. Done.
+        {!code ? (
+          <>
+            <div>
+              <div className="setup-label">Wie soll dein Kontakt heißen?</div>
+              <input
+                type="text"
+                placeholder="z.B. Oma, Leon, Mama …"
+                maxLength={30}
+                value={inviteName}
+                onChange={e => setInviteName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && inviteName.trim() && generateCode()}
+                autoFocus
+              />
             </div>
-            <div className="setup-label">Step 1 — Your invite code</div>
-            <div className="code-display">
-              <div className="code-number">{code}</div>
-              <div className="code-timer">{timerText}</div>
-            </div>
-            <button className="btn secondary small" style={{ marginTop: '0.6rem', width: '100%' }} onClick={generate}>
-              Generate new code
+
+            <button
+              className="btn"
+              style={{ width: '100%' }}
+              onClick={generateCode}
+              disabled={publishing || !inviteName.trim()}
+            >
+              <UserPlus size={16} style={{ marginRight: '0.4rem' }} />
+              {publishing ? 'Wird erstellt…' : 'Code erstellen'}
             </button>
-            <div className="setup-label" style={{ marginTop: '1rem' }}>Step 2 — Send this code to your contact</div>
-            <div style={{ fontSize: '0.82rem', color: 'var(--muted)', lineHeight: 1.6, marginBottom: '0.8rem' }}>
-              Copy the number and send it via SMS, Signal, or say it out loud. Valid for 10 minutes, one use only.
-            </div>
-            <div className="setup-label">Step 3 — What do you want to call them?</div>
-            <input type="text" placeholder="e.g. Alina" maxLength={30} value={nameInvite} onChange={e => setNameInvite(e.target.value)} />
-          </div>
+          </>
         ) : (
-          <div>
-            <div className="warning-box" style={{ background: '#1a2018', borderColor: '#2e4a2a', color: '#8fba8a', marginBottom: '1rem', fontSize: '0.82rem', lineHeight: 1.6 }}>
-              Someone sent you a 6-digit code via SMS or Signal. Enter it here and they will appear in your contacts.
+          <>
+            <div
+              onClick={copyCode}
+              title="Klicken zum Kopieren"
+              style={{
+                textAlign: 'center', cursor: 'pointer',
+                background: 'var(--surface2)', border: '2px solid var(--accent)',
+                borderRadius: 12, padding: '1.4rem 1rem', position: 'relative',
+              }}
+            >
+              <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                Code für {inviteName}
+              </div>
+              <div style={{ fontFamily: 'monospace', fontSize: '2.8rem', letterSpacing: '0.45em', fontWeight: 700, color: 'var(--accent)' }}>
+                {code}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: copied ? 'var(--accent)' : 'var(--muted)', marginTop: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem' }}>
+                {copied ? <><Check size={13} /> Kopiert!</> : <><Copy size={13} /> Tippen zum Kopieren</>}
+              </div>
             </div>
-            <div className="setup-label">Enter the code you received</div>
-            <input
-              type="text" placeholder="123456" maxLength={6} value={recvCode} onChange={e => setRecvCode(e.target.value)}
-              style={{ letterSpacing: '0.4em', fontSize: '1.6rem', textAlign: 'center', fontFamily: 'monospace' }}
-            />
-            <div style={{ fontSize: '0.78rem', color: 'var(--muted)', marginTop: '0.4rem', marginBottom: '0.8rem' }}>
-              Codes expire after 10 minutes.
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: remaining < 60 ? '#e07070' : 'var(--muted)' }}>
+              <span>Gültig noch {m}:{s}</span>
+              <button className="btn secondary small" onClick={generateCode} disabled={publishing}>
+                Neu erstellen
+              </button>
             </div>
-            <div className="setup-label">What do you want to call them?</div>
-            <input type="text" placeholder="e.g. Kay" maxLength={30} value={nameJoin} onChange={e => setNameJoin(e.target.value)} />
-          </div>
+
+            <div style={{ fontSize: '0.82rem', color: 'var(--muted)', lineHeight: 1.6, background: 'var(--surface2)', borderRadius: 8, padding: '0.7rem 0.9rem' }}>
+              Schick den Code an <strong style={{ color: 'var(--text)' }}>{inviteName}</strong>. Sobald der Code eingegeben wird, erscheint <strong style={{ color: 'var(--text)' }}>{inviteName}</strong> automatisch in deiner Kontaktliste.
+            </div>
+          </>
         )}
 
-        <details open={advancedOpen} onToggle={e => setAdvancedOpen((e.target as HTMLDetailsElement).open)} style={{ marginTop: '0.8rem' }}>
-          <summary style={{ fontSize: '0.75rem', color: 'var(--muted)', cursor: 'pointer', letterSpacing: '0.06em', textTransform: 'uppercase', padding: '0.3rem 0' }}>
-            Advanced: add by public key
-          </summary>
-          <div style={{ marginTop: '0.8rem' }}>
-            <div className="setup-label">Their public key (npub...)</div>
-            <input type="text" placeholder="npub1..." value={advPubkey} onChange={e => setAdvPubkey(e.target.value)} style={{ fontSize: '0.78rem', fontFamily: 'monospace' }} />
-            <div className="setup-label" style={{ marginTop: '0.6rem' }}>Name for this contact</div>
-            <input type="text" placeholder="e.g. Alina" maxLength={30} value={advName} onChange={e => setAdvName(e.target.value)} />
-          </div>
-        </details>
-
-        <div className="modal-actions">
-          <button className="btn secondary" onClick={close}>Cancel</button>
-          <button className="btn" onClick={handleAdd}>Add contact</button>
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
+          <KeyRound size={14} style={{ color: 'var(--muted)' }} />
+          <span style={{ fontSize: '0.82rem', color: 'var(--muted)' }}>Code bekommen?</span>
+          <button
+            onClick={() => setView('join')}
+            style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '0.82rem', fontFamily: 'var(--font-body)', textDecoration: 'underline' }}
+          >
+            Hier eingeben
+          </button>
         </div>
+
+        <button className="btn secondary" style={{ width: '100%' }} onClick={close}>Schließen</button>
       </div>
     </div>
   )

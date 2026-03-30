@@ -74,3 +74,11 @@ export async function hashRoomName(name: string): Promise<string> {
   const hashArray = Array.from(new Uint8Array(hashBuffer))
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
 }
+
+export async function hashInviteCode(code: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const data = encoder.encode('alina-invite-v1:' + code)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+}
