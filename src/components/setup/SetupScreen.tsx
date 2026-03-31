@@ -1,10 +1,19 @@
 import { useState } from 'react'
 import { useStore } from '../../store/useStore'
 import { useT } from '../../hooks/useT'
+import type { Lang } from '../../lib/i18n'
+
+const LANGS: { code: Lang; label: string }[] = [
+  { code: 'de', label: 'DE' },
+  { code: 'en', label: 'EN' },
+  { code: 'ru', label: 'RU' },
+]
 
 export function SetupScreen() {
   const createIdentity = useStore(s => s.createIdentity)
   const importIdentity = useStore(s => s.importIdentity)
+  const lang = useStore(s => s.lang)
+  const setLang = useStore(s => s.setLang)
   const t = useT()
 
   const [setupName, setSetupName] = useState('')
@@ -34,6 +43,27 @@ export function SetupScreen() {
         <div className="logo-block">
           <div className="logo-name">Alina</div>
           <div className="logo-tagline">{t('setup.tagline')}</div>
+          <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.8rem', justifyContent: 'center' }}>
+            {LANGS.map(l => (
+              <button
+                key={l.code}
+                onClick={() => setLang(l.code)}
+                style={{
+                  padding: '0.25rem 0.7rem',
+                  borderRadius: 6,
+                  border: `1px solid ${lang === l.code ? 'var(--accent)' : 'var(--border)'}`,
+                  background: lang === l.code ? 'var(--accent)' : 'transparent',
+                  color: lang === l.code ? '#1a1a1b' : 'var(--muted)',
+                  fontWeight: lang === l.code ? 700 : 400,
+                  cursor: 'pointer',
+                  fontSize: '0.78rem',
+                  fontFamily: 'var(--font-body)',
+                }}
+              >
+                {l.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="setup-card">
