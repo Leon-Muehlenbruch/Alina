@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Copy, Check, Users } from 'lucide-react'
 import { useStore } from '../../store/useStore'
+import { useT } from '../../hooks/useT'
 import { hashRoomName } from '../../lib/crypto'
 import { subscribeToRoom } from '../../lib/nostr'
 
@@ -11,6 +12,7 @@ export function AddRoomModal() {
   const addRoom = useStore(s => s.addRoom)
   const setActiveChat = useStore(s => s.setActiveChat)
   const showStatus = useStore(s => s.showStatus)
+  const t = useT()
 
   const [view, setView] = useState<View>('create')
   const [roomName, setRoomName] = useState('')
@@ -35,7 +37,7 @@ export function AddRoomModal() {
   }
 
   const handleDone = () => {
-    showStatus(`Gruppe „${roomName.trim()}" erstellt`, 2000)
+    showStatus(t('room.created', { name: roomName.trim() }), 2000)
     close()
   }
 
@@ -43,14 +45,12 @@ export function AddRoomModal() {
     return (
       <div className="modal-overlay open" onClick={e => e.target === e.currentTarget && close()}>
         <div className="modal">
-          <div className="modal-title">Leute einladen</div>
-          <div className="modal-subtitle">
-            Schick den Gruppenname an alle, die du einladen möchtest. Wer denselben Namen eingibt, landet automatisch im gleichen Gespräch.
-          </div>
+          <div className="modal-title">{t('room.inviteTitle')}</div>
+          <div className="modal-subtitle">{t('room.inviteSubtitle')}</div>
 
           <div
             onClick={copyName}
-            title="Klicken zum Kopieren"
+            title={t('contact.tapToCopy')}
             style={{
               textAlign: 'center', cursor: 'pointer',
               background: 'var(--surface2)', border: '2px solid var(--accent)',
@@ -58,23 +58,23 @@ export function AddRoomModal() {
             }}
           >
             <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-              Gruppenname
+              {t('room.groupNameLabel')}
             </div>
             <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--accent)', marginBottom: '0.5rem' }}>
               {roomName.trim()}
             </div>
             <div style={{ fontSize: '0.75rem', color: copied ? 'var(--accent)' : 'var(--muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem' }}>
-              {copied ? <><Check size={13} /> Kopiert!</> : <><Copy size={13} /> Tippen zum Kopieren</>}
+              {copied ? <><Check size={13} /> {t('contact.copied')}</> : <><Copy size={13} /> {t('contact.tapToCopy')}</>}
             </div>
           </div>
 
           <div style={{ fontSize: '0.82rem', color: 'var(--muted)', lineHeight: 1.6, background: 'var(--surface2)', borderRadius: 8, padding: '0.7rem 0.9rem' }}>
-            Die andere Person öffnet Alina, tippt auf <strong style={{ color: 'var(--text)' }}>Gruppe</strong> und gibt denselben Gruppenname ein — fertig.
+            {t('room.joinInstruction', { btn: t('sidebar.group') })}
           </div>
 
           <button className="btn" style={{ width: '100%' }} onClick={handleDone}>
             <Users size={16} style={{ marginRight: '0.4rem' }} />
-            Fertig
+            {t('room.done')}
           </button>
         </div>
       </div>
@@ -84,16 +84,14 @@ export function AddRoomModal() {
   return (
     <div className="modal-overlay open" onClick={e => e.target === e.currentTarget && close()}>
       <div className="modal">
-        <div className="modal-title">Gruppe erstellen</div>
-        <div className="modal-subtitle">
-          Alle die denselben Gruppenname eingeben, landen automatisch im gleichen Gespräch.
-        </div>
+        <div className="modal-title">{t('room.createTitle')}</div>
+        <div className="modal-subtitle">{t('room.createSubtitle')}</div>
 
         <div>
-          <div className="setup-label">Gruppenname</div>
+          <div className="setup-label">{t('room.groupNameLabel')}</div>
           <input
             type="text"
-            placeholder="z.B. Familie, Freunde, Arbeit …"
+            placeholder={t('room.namePlaceholder')}
             maxLength={50}
             value={roomName}
             onChange={e => setRoomName(e.target.value)}
@@ -101,7 +99,7 @@ export function AddRoomModal() {
             autoFocus
           />
           <div style={{ fontSize: '0.78rem', color: 'var(--muted)', marginTop: '0.5rem', lineHeight: 1.5 }}>
-            Tipp: Je einzigartiger der Name, desto sicherer ist die Gruppe.
+            {t('room.nameTip')}
           </div>
         </div>
 
@@ -111,11 +109,11 @@ export function AddRoomModal() {
           onClick={handleCreate}
           disabled={!roomName.trim()}
         >
-          Gruppe erstellen
+          {t('room.createBtn')}
         </button>
 
         <button className="btn secondary" style={{ width: '100%' }} onClick={close}>
-          Abbrechen
+          {t('room.cancelBtn')}
         </button>
       </div>
     </div>

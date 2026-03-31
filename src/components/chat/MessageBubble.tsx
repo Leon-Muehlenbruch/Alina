@@ -1,5 +1,7 @@
 import { MapPin } from 'lucide-react'
 import type { Message } from '../../store/useStore'
+import { useT } from '../../hooks/useT'
+import { useStore } from '../../store/useStore'
 import { formatTime } from '../../lib/utils'
 
 interface MessageBubbleProps {
@@ -11,6 +13,9 @@ interface MessageBubbleProps {
 }
 
 export function MessageBubble({ msg, isMine, isRoom, senderName, onImageClick }: MessageBubbleProps) {
+  const lang = useStore(s => s.lang)
+  const t = useT()
+
   return (
     <div className={`msg-row ${isMine ? 'mine' : 'theirs'}`}>
       {!isMine && isRoom && senderName && (
@@ -27,17 +32,17 @@ export function MessageBubble({ msg, isMine, isRoom, senderName, onImageClick }:
           />
         </div>
       ) : msg.type === 'location' ? (
-        <LocationBubble content={msg.content} isMine={isMine} />
+        <LocationBubble content={msg.content} isMine={isMine} openMapLabel={t('msg.openMap')} />
       ) : (
         <div className="msg-bubble">{msg.content}</div>
       )}
 
-      <div className="msg-time">{formatTime(msg.ts)}</div>
+      <div className="msg-time">{formatTime(msg.ts, lang)}</div>
     </div>
   )
 }
 
-function LocationBubble({ content, isMine }: { content: string; isMine: boolean }) {
+function LocationBubble({ content, isMine, openMapLabel }: { content: string; isMine: boolean; openMapLabel: string }) {
   try {
     const data = JSON.parse(content)
     return (
@@ -51,7 +56,7 @@ function LocationBubble({ content, isMine }: { content: string; isMine: boolean 
             target="_blank"
             rel="noopener noreferrer"
           >
-            In Karte öffnen ↗
+            {openMapLabel}
           </a>
         </div>
       </div>

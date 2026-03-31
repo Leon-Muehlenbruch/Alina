@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { MoreHorizontal, Pencil, Trash2, MessageCirclePlus, Users } from 'lucide-react'
 import { useStore } from '../../store/useStore'
+import { useT } from '../../hooks/useT'
 import { Avatar } from '../ui/Avatar'
 import { lastMsgPreview } from '../../lib/utils'
 
@@ -15,6 +16,8 @@ export function ChatList() {
   const renameContact = useStore(s => s.renameContact)
   const deleteContact = useStore(s => s.deleteContact)
   const setOpenModal = useStore(s => s.setOpenModal)
+  const lang = useStore(s => s.lang)
+  const t = useT()
 
   const [menuKey, setMenuKey] = useState<string | null>(null)
   const [renaming, setRenaming] = useState<string | null>(null)
@@ -62,21 +65,21 @@ export function ChatList() {
 
   const handleDelete = (pubkey: string, name: string) => {
     setMenuKey(null)
-    if (confirm(`„${name}" löschen?\nDer Chatverlauf wird ebenfalls entfernt.`)) deleteContact(pubkey)
+    if (confirm(t('list.deleteConfirm', { name }))) deleteContact(pubkey)
   }
 
   if (!hasAnything) {
     return (
       <div className="chat-list-empty">
         <div className="chat-list-empty-icon"><MessageCirclePlus size={32} strokeWidth={1.2} /></div>
-        <div className="chat-list-empty-title">Noch keine Chats</div>
-        <div className="chat-list-empty-sub">Lade jemanden ein oder erstelle eine Gruppe.</div>
+        <div className="chat-list-empty-title">{t('list.empty')}</div>
+        <div className="chat-list-empty-sub">{t('list.emptySub')}</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginTop: '1.2rem', width: '100%' }}>
           <button className="sidebar-action-btn primary" onClick={() => setOpenModal('add-contact')}>
-            <MessageCirclePlus size={16} /> Jemanden einladen
+            <MessageCirclePlus size={16} /> {t('list.inviteBtn')}
           </button>
           <button className="sidebar-action-btn" onClick={() => setOpenModal('add-room')}>
-            <Users size={16} /> Gruppe erstellen
+            <Users size={16} /> {t('list.groupBtn')}
           </button>
         </div>
       </div>
@@ -114,14 +117,14 @@ export function ChatList() {
               ) : (
                 <div className="contact-name">{c.name}</div>
               )}
-              <div className="contact-sub">{lastMsgPreview(messages[chatId] || [])}</div>
+              <div className="contact-sub">{lastMsgPreview(messages[chatId] || [], lang)}</div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flexShrink: 0 }}>
               {(unread[chatId] || 0) > 0 && <div className="unread-badge">{unread[chatId]}</div>}
               <button
                 className="chat-item-menu-btn"
                 onClick={e => { e.stopPropagation(); setMenuKey(isMenuOpen ? null : c.pubkey) }}
-                title="Optionen"
+                title={t('list.options')}
               >
                 <MoreHorizontal size={16} />
               </button>
@@ -129,10 +132,10 @@ export function ChatList() {
             {isMenuOpen && (
               <div ref={menuRef} className="chat-item-menu" onClick={e => e.stopPropagation()}>
                 <button onClick={() => startRename(c.pubkey, c.name)}>
-                  <Pencil size={14} /> Umbenennen
+                  <Pencil size={14} /> {t('list.rename')}
                 </button>
                 <button style={{ color: 'var(--danger)' }} onClick={() => handleDelete(c.pubkey, c.name)}>
-                  <Trash2 size={14} /> Löschen
+                  <Trash2 size={14} /> {t('list.delete')}
                 </button>
               </div>
             )}
@@ -142,7 +145,7 @@ export function ChatList() {
 
       {roomItems.length > 0 && (
         <>
-          {contactItems.length > 0 && <div className="chat-section-label">Gruppen</div>}
+          {contactItems.length > 0 && <div className="chat-section-label">{t('list.groups')}</div>}
           {roomItems.map(r => {
             const chatId = 'room:' + r.hash
             const isActive = activeChat?.chatId === chatId
@@ -151,7 +154,7 @@ export function ChatList() {
                 <Avatar name={r.name} isGroup />
                 <div className="contact-info">
                   <div className="contact-name">{r.name}</div>
-                  <div className="contact-sub">{lastMsgPreview(messages[chatId] || [])}</div>
+                  <div className="contact-sub">{lastMsgPreview(messages[chatId] || [], lang)}</div>
                 </div>
                 {(unread[chatId] || 0) > 0 && <div className="unread-badge">{unread[chatId]}</div>}
               </div>

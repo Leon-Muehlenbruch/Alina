@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { MessageCirclePlus, Users } from 'lucide-react'
 import { useStore } from '../../store/useStore'
+import { useT } from '../../hooks/useT'
 import { ChatHeader } from './ChatHeader'
 import { MessageList } from './MessageList'
 import { ChatInput } from './ChatInput'
@@ -9,6 +10,7 @@ import { Lightbox } from '../ui/Lightbox'
 export function ChatArea() {
   const activeChat = useStore(s => s.activeChat)
   const setOpenModal = useStore(s => s.setOpenModal)
+  const t = useT()
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null)
 
   if (!activeChat) {
@@ -19,10 +21,10 @@ export function ChatArea() {
             Alina
           </div>
           <p style={{ fontSize: '1rem', color: 'var(--muted)', marginBottom: '0.3rem', fontWeight: 500 }}>
-            Sicher. Dezentral. Deins.
+            {t('chat.tagline')}
           </p>
           <p style={{ fontSize: '0.82rem', color: 'var(--border)', marginBottom: '2rem' }}>
-            Keine Werbung. Kein Server. Kein Konto nötig.
+            {t('chat.noAccount')}
           </p>
           <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap', justifyContent: 'center' }}>
             <button
@@ -30,14 +32,14 @@ export function ChatArea() {
               style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
               onClick={() => setOpenModal('add-contact')}
             >
-              <MessageCirclePlus size={16} /> Jemanden einladen
+              <MessageCirclePlus size={16} /> {t('chat.inviteSomeone')}
             </button>
             <button
               className="btn secondary"
               style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
               onClick={() => setOpenModal('add-room')}
             >
-              <Users size={16} /> Gruppe erstellen
+              <Users size={16} /> {t('chat.createGroup')}
             </button>
           </div>
         </div>

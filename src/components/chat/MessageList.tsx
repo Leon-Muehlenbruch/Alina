@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useStore } from '../../store/useStore'
+import { useT } from '../../hooks/useT'
 import { MessageBubble } from './MessageBubble'
 
 interface MessageListProps {
@@ -11,6 +12,7 @@ export function MessageList({ onImageClick }: MessageListProps) {
   const messages = useStore(s => s.messages)
   const identity = useStore(s => s.identity)
   const contacts = useStore(s => s.contacts)
+  const t = useT()
   const containerRef = useRef<HTMLDivElement>(null)
 
   const chatMessages = activeChat ? (messages[activeChat.chatId] || []) : []
@@ -26,7 +28,7 @@ export function MessageList({ onImageClick }: MessageListProps) {
   return (
     <div className="chat-messages" ref={containerRef}>
       {chatMessages.length === 0 && (
-        <div className="msg-system">Beginn des Gesprächs · Ende-zu-Ende verschlüsselt</div>
+        <div className="msg-system">{t('msg.start')}</div>
       )}
       {chatMessages.map((msg, i) => {
         const isMine = msg.pubkey === identity?.pubkey

@@ -1,4 +1,5 @@
 import { useStore } from '../../store/useStore'
+import { useT } from '../../hooks/useT'
 import { ChatList } from './ChatList'
 import { RELAYS } from '../../lib/constants'
 import { Settings, MessageCirclePlus, Users } from 'lucide-react'
@@ -8,6 +9,7 @@ export function Sidebar() {
   const sidebarOpen = useStore(s => s.sidebarOpen)
   const relayCount = useStore(s => s.relayCount)
   const total = RELAYS.length
+  const t = useT()
 
   const dotColor = relayCount === 0 ? '#e07070' : relayCount < total / 2 ? '#e0b870' : '#70c070'
 
@@ -17,7 +19,7 @@ export function Sidebar() {
         <span className="sidebar-logo">
           Alina
           <span
-            title={`${relayCount}/${total} Relays verbunden`}
+            title={t('sidebar.relays', { n: String(relayCount), total: String(total) })}
             style={{
               display: 'inline-block', width: 7, height: 7, borderRadius: '50%',
               background: dotColor, marginLeft: '0.4rem', verticalAlign: 'middle',
@@ -27,7 +29,7 @@ export function Sidebar() {
         </span>
         <button
           className="btn icon-btn"
-          title="Einstellungen"
+          title={t('sidebar.settings')}
           onClick={() => setOpenModal('settings')}
         >
           <Settings size={17} />
@@ -41,11 +43,11 @@ export function Sidebar() {
       <div className="sidebar-footer">
         <button className="sidebar-action-btn primary" onClick={() => setOpenModal('add-contact')}>
           <MessageCirclePlus size={16} />
-          Neuer Chat
+          {t('sidebar.newChat')}
         </button>
         <button className="sidebar-action-btn" onClick={() => setOpenModal('add-room')}>
           <Users size={16} />
-          Gruppe
+          {t('sidebar.group')}
         </button>
       </div>
     </div>

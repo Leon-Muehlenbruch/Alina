@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { ArrowLeft, Copy, Check, UserPlus, KeyRound } from 'lucide-react'
 import { useStore } from '../../store/useStore'
+import { useT } from '../../hooks/useT'
 import { publishInviteCode, lookupInviteCode, resubscribeAll } from '../../lib/nostr'
 import { INVITE_CODE_DURATION } from '../../lib/constants'
 
@@ -12,6 +13,7 @@ export function AddContactModal() {
   const addContact = useStore(s => s.addContact)
   const showStatus = useStore(s => s.showStatus)
   const identity = useStore(s => s.identity)
+  const t = useT()
 
   const [view, setView] = useState<View>('invite')
 
@@ -25,9 +27,9 @@ export function AddContactModal() {
 
   // Join
   const [joinCode, setJoinCode] = useState('')
-  const [inviterName, setInviterName] = useState('')   // pre-filled from relay event
+  const [inviterName, setInviterName] = useState('')
   const [inviterPubkey, setInviterPubkey] = useState('')
-  const [joinName, setJoinName] = useState('')         // editable by joiner
+  const [joinName, setJoinName] = useState('')
   const [lookupState, setLookupState] = useState<LookupState>('idle')
   const [lookupDone, setLookupDone] = useState(false)
 
@@ -59,7 +61,7 @@ export function AddContactModal() {
       setCode(newCode)
       startCountdown()
     } catch {
-      alert('Code konnte nicht erstellt werden.')
+      alert(t('contact.errorCreating'))
     } finally {
       setPublishing(false)
     }
@@ -72,7 +74,6 @@ export function AddContactModal() {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  // Auto-lookup once 6 digits are entered
   useEffect(() => {
     if (joinCode.length !== 6 || lookupDone) return
     setLookupState('searching')
@@ -83,7 +84,7 @@ export function AddContactModal() {
       } else {
         setInviterName(result.name)
         setInviterPubkey(result.pubkey)
-        setJoinName(result.name) // pre-fill with inviter's name
+        setJoinName(result.name)
         setLookupState('found')
       }
     })
@@ -102,7 +103,7 @@ export function AddContactModal() {
     if (lookupState !== 'found' || !joinName.trim() || !inviterPubkey) return
     addContact(inviterPubkey, joinName.trim())
     resubscribeAll()
-    showStatus(`${joinName.trim()} hinzugefügt!`, 3000)
+    showStatus(t('contact.added', { name: joinName.trim() }), 3000)
     close()
   }
 
@@ -115,18 +116,17 @@ export function AddContactModal() {
       <div className="modal-overlay open" onClick={e => e.target === e.currentTarget && close()}>
         <div className="modal">
           <button className="modal-back-btn" onClick={() => { setView('invite'); resetJoin() }}>
-            <ArrowLeft size={15} /> Zurück
+            <ArrowLeft size={15} /> {t('contact.back')}
           </button>
 
-          <div className="modal-title">Code eingeben</div>
+          <div className="modal-title">{t('contact.enterCode')}</div>
 
-          {/* Code input — always visible */}
           <div>
-            <div className="setup-label">6-stelliger Code</div>
+            <div className="setup-label">{t('contact.codeLabel')}</div>
             <input
               type="text"
               inputMode="numeric"
-              placeholder="123 456"
+              placeholder={t('contact.codePlaceholder')}
               maxLength={6}
               value={joinCode}
               onChange={e => {
@@ -140,34 +140,31 @@ export function AddContactModal() {
             />
           </div>
 
-          {/* Searching indicator */}
           {lookupState === 'searching' && (
             <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: '0.85rem', padding: '0.5rem 0' }}>
-              Suche läuft…
+              {t('contact.searching')}
             </div>
           )}
 
-          {/* Not found */}
           {lookupState === 'not_found' && (
             <div style={{ fontSize: '0.82rem', color: '#e07070', background: '#2a1818', border: '1px solid #5a2a2a', borderRadius: 8, padding: '0.7rem 0.9rem' }}>
-              Code nicht gefunden oder abgelaufen. Bitte einen neuen Code anfordern.
+              {t('contact.notFound')}
             </div>
           )}
 
-          {/* Found — show inviter info + name field */}
           {lookupState === 'found' && (
             <>
               <div style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 10, padding: '1rem', textAlign: 'center' }}>
                 <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                  Einladung von
+                  {t('contact.invitationFrom')}
                 </div>
                 <div style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--accent)' }}>
-                  {inviterName || 'Unbekannt'}
+                  {inviterName || t('contact.unknown')}
                 </div>
               </div>
 
               <div>
-                <div className="setup-label">Unter welchem Namen speichern?</div>
+                <div className="setup-label">{t('contact.saveAs')}</div>
                 <input
                   type="text"
                   value={joinName}
@@ -178,7 +175,7 @@ export function AddContactModal() {
                   autoFocus
                 />
                 <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.4rem' }}>
-                  Du kannst den Namen jederzeit ändern.
+                  {t('contact.canRename')}
                 </div>
               </div>
 
@@ -188,12 +185,12 @@ export function AddContactModal() {
                 onClick={handleConfirm}
                 disabled={!joinName.trim()}
               >
-                Hinzufügen
+                {t('contact.addBtn')}
               </button>
             </>
           )}
 
-          <button className="btn secondary" style={{ width: '100%' }} onClick={close}>Abbrechen</button>
+          <button className="btn secondary" style={{ width: '100%' }} onClick={close}>{t('contact.cancelBtn')}</button>
         </div>
       </div>
     )
@@ -203,18 +200,16 @@ export function AddContactModal() {
   return (
     <div className="modal-overlay open" onClick={e => e.target === e.currentTarget && close()}>
       <div className="modal">
-        <div className="modal-title">Jemanden einladen</div>
-        <div className="modal-subtitle">
-          Gib einen Namen ein, erstelle einen Code und schick ihn per WhatsApp oder SMS.
-        </div>
+        <div className="modal-title">{t('contact.inviteTitle')}</div>
+        <div className="modal-subtitle">{t('contact.inviteSubtitle')}</div>
 
         {!code ? (
           <>
             <div>
-              <div className="setup-label">Wie soll dein Kontakt heißen?</div>
+              <div className="setup-label">{t('contact.contactNameLabel')}</div>
               <input
                 type="text"
-                placeholder="z.B. Oma, Leon, Mama …"
+                placeholder={t('contact.contactNamePlaceholder')}
                 maxLength={30}
                 value={inviteName}
                 onChange={e => setInviteName(e.target.value)}
@@ -230,14 +225,14 @@ export function AddContactModal() {
               disabled={publishing || !inviteName.trim()}
             >
               <UserPlus size={16} style={{ marginRight: '0.4rem' }} />
-              {publishing ? 'Wird erstellt…' : 'Code erstellen'}
+              {publishing ? t('contact.creating') : t('contact.createCode')}
             </button>
           </>
         ) : (
           <>
             <div
               onClick={copyCode}
-              title="Klicken zum Kopieren"
+              title={t('contact.tapToCopy')}
               style={{
                 textAlign: 'center', cursor: 'pointer',
                 background: 'var(--surface2)', border: '2px solid var(--accent)',
@@ -245,41 +240,41 @@ export function AddContactModal() {
               }}
             >
               <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                Code für {inviteName}
+                {t('contact.codeFor', { name: inviteName })}
               </div>
               <div style={{ fontFamily: 'monospace', fontSize: '2.8rem', letterSpacing: '0.45em', fontWeight: 700, color: 'var(--accent)' }}>
                 {code}
               </div>
               <div style={{ fontSize: '0.75rem', color: copied ? 'var(--accent)' : 'var(--muted)', marginTop: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem' }}>
-                {copied ? <><Check size={13} /> Kopiert!</> : <><Copy size={13} /> Tippen zum Kopieren</>}
+                {copied ? <><Check size={13} /> {t('contact.copied')}</> : <><Copy size={13} /> {t('contact.tapToCopy')}</>}
               </div>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: remaining < 60 ? '#e07070' : 'var(--muted)' }}>
-              <span>Gültig noch {m}:{s}</span>
+              <span>{t('contact.validFor', { m, s })}</span>
               <button className="btn secondary small" onClick={generateCode} disabled={publishing}>
-                Neu erstellen
+                {t('contact.recreate')}
               </button>
             </div>
 
             <div style={{ fontSize: '0.82rem', color: 'var(--muted)', lineHeight: 1.6, background: 'var(--surface2)', borderRadius: 8, padding: '0.7rem 0.9rem' }}>
-              Schick den Code an <strong style={{ color: 'var(--text)' }}>{inviteName}</strong>. Sobald der Code eingegeben wird, erscheint <strong style={{ color: 'var(--text)' }}>{inviteName}</strong> automatisch in deiner Kontaktliste.
+              {t('contact.sendInstruction', { name: inviteName })}
             </div>
           </>
         )}
 
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
           <KeyRound size={14} style={{ color: 'var(--muted)' }} />
-          <span style={{ fontSize: '0.82rem', color: 'var(--muted)' }}>Code bekommen?</span>
+          <span style={{ fontSize: '0.82rem', color: 'var(--muted)' }}>{t('contact.haveCode')}</span>
           <button
             onClick={() => setView('join')}
             style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '0.82rem', fontFamily: 'var(--font-body)', textDecoration: 'underline' }}
           >
-            Hier eingeben
+            {t('contact.enterHere')}
           </button>
         </div>
 
-        <button className="btn secondary" style={{ width: '100%' }} onClick={close}>Schließen</button>
+        <button className="btn secondary" style={{ width: '100%' }} onClick={close}>{t('contact.close')}</button>
       </div>
     </div>
   )

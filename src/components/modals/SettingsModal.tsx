@@ -1,7 +1,15 @@
 import { useState } from 'react'
 import { useStore } from '../../store/useStore'
+import { useT } from '../../hooks/useT'
 import { encodeNpub, encodeNsec } from '../../lib/crypto'
 import { loadLogs, clearLogs as clearStoredLogs } from '../../lib/storage'
+import type { Lang } from '../../lib/i18n'
+
+const LANGS: { code: Lang; label: string }[] = [
+  { code: 'de', label: 'DE' },
+  { code: 'en', label: 'EN' },
+  { code: 'ru', label: 'RU' },
+]
 
 export function SettingsModal() {
   const identity = useStore(s => s.identity)
@@ -9,6 +17,9 @@ export function SettingsModal() {
   const logout = useStore(s => s.logout)
   const setOpenModal = useStore(s => s.setOpenModal)
   const showStatus = useStore(s => s.showStatus)
+  const lang = useStore(s => s.lang)
+  const setLang = useStore(s => s.setLang)
+  const t = useT()
 
   const [name, setName] = useState(identity?.name ?? '')
   const [showLogs, setShowLogs] = useState(false)
@@ -26,7 +37,7 @@ export function SettingsModal() {
   }
 
   const handleLogout = () => {
-    if (!confirm('Sign out? Make sure you have written down your private key.')) return
+    if (!confirm(t('settings.signoutConfirm'))) return
     logout()
     close()
   }
@@ -38,34 +49,63 @@ export function SettingsModal() {
   return (
     <div className="modal-overlay open" onClick={e => e.target === e.currentTarget && close()}>
       <div className="modal">
-        <div className="modal-title">Settings</div>
+        <div className="modal-title">{t('settings.title')}</div>
+
         <div>
-          <div className="setup-label">Your name</div>
+          <div className="setup-label">{t('settings.nameLabel')}</div>
           <input type="text" maxLength={30} value={name} onChange={e => setName(e.target.value)} />
         </div>
+
         <div>
-          <div className="setup-label">Your public key</div>
-          <div className="key-display" onClick={() => copyToClipboard(npub, 'Public key copied')}>
+          <div className="setup-label">{t('settings.pubkeyLabel')}</div>
+          <div className="key-display" onClick={() => copyToClipboard(npub, t('settings.pubkeyCopied'))}>
             {npub}
           </div>
         </div>
+
         <div>
-          <div className="setup-label">Your private key — never share this!</div>
-          <div className="key-display" onClick={() => copyToClipboard(nsec, 'Private key copied!')}>
+          <div className="setup-label">{t('settings.privkeyLabel')}</div>
+          <div className="key-display" onClick={() => copyToClipboard(nsec, t('settings.privkeyCopied'))}>
             {nsec}
           </div>
         </div>
-        <div className="warning-box">
-          ⚠ Write down your private key and keep it safe. It is your identity. Anyone who has it can be you.
+
+        <div className="warning-box">{t('settings.keyWarning')}</div>
+
+        <div>
+          <div className="setup-label">{t('settings.language')}</div>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            {LANGS.map(l => (
+              <button
+                key={l.code}
+                onClick={() => setLang(l.code)}
+                style={{
+                  padding: '0.35rem 0.9rem',
+                  borderRadius: 6,
+                  border: `1px solid ${lang === l.code ? 'var(--accent)' : 'var(--border)'}`,
+                  background: lang === l.code ? 'var(--accent)' : 'var(--surface2)',
+                  color: lang === l.code ? '#1a1a1b' : 'var(--text)',
+                  fontWeight: lang === l.code ? 700 : 400,
+                  cursor: 'pointer',
+                  fontSize: '0.85rem',
+                  fontFamily: 'var(--font-body)',
+                }}
+              >
+                {l.label}
+              </button>
+            ))}
+          </div>
         </div>
+
         <div style={{ fontSize: '0.68rem', color: 'var(--muted)', textAlign: 'center', paddingTop: '0.5rem', letterSpacing: '0.05em' }}>
           © 2025 Kay (__archon) Muehlenbruch · MIT License
         </div>
+
         <div className="modal-actions" style={{ flexWrap: 'wrap', gap: '0.4rem' }}>
-          <button className="btn danger small" onClick={handleLogout}>Sign out</button>
-          <button className="btn secondary small" onClick={() => setShowLogs(true)} title="View error logs">🪲 Logs</button>
-          <button className="btn secondary" onClick={close}>Close</button>
-          <button className="btn" onClick={handleSave}>Save</button>
+          <button className="btn danger small" onClick={handleLogout}>{t('settings.signout')}</button>
+          <button className="btn secondary small" onClick={() => setShowLogs(true)} title="View error logs">🪲 {t('settings.logs')}</button>
+          <button className="btn secondary" onClick={close}>{t('settings.close')}</button>
+          <button className="btn" onClick={handleSave}>{t('settings.save')}</button>
         </div>
       </div>
 
@@ -77,15 +117,16 @@ export function SettingsModal() {
 function LogViewer({ onClose }: { onClose: () => void }) {
   const logs = loadLogs()
   const showStatus = useStore(s => s.showStatus)
+  const t = useT()
 
   const handleCopy = () => {
     const text = logs.map(l => `[${l.ts}] [${l.type.toUpperCase()}] ${l.message}`).join('\n')
-    navigator.clipboard.writeText(text).then(() => showStatus('Logs copied!', 2000))
+    navigator.clipboard.writeText(text).then(() => showStatus(t('settings.logsCopied'), 2000))
   }
 
   const handleClear = () => {
     clearStoredLogs()
-    showStatus('Logs cleared.', 2000)
+    showStatus(t('settings.logsCleared'), 2000)
     onClose()
   }
 
@@ -96,16 +137,16 @@ function LogViewer({ onClose }: { onClose: () => void }) {
     >
       <div style={{ background: '#0e0e0f', border: '1px solid #2e2e33', borderRadius: 12, width: '100%', maxWidth: 700, maxHeight: '80vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.8rem 1rem', borderBottom: '1px solid #2e2e33' }}>
-          <span style={{ fontSize: '0.85rem', color: '#c8a97e', fontWeight: 500 }}>Debug Logs ({logs.length})</span>
+          <span style={{ fontSize: '0.85rem', color: '#c8a97e', fontWeight: 500 }}>{t('settings.logsTitle', { n: String(logs.length) })}</span>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button onClick={handleCopy} style={{ background: '#222226', border: '1px solid #2e2e33', color: '#7a7672', borderRadius: 6, padding: '0.3rem 0.7rem', fontSize: '0.75rem', cursor: 'pointer' }}>Copy</button>
-            <button onClick={handleClear} style={{ background: '#222226', border: '1px solid #2e2e33', color: '#7a7672', borderRadius: 6, padding: '0.3rem 0.7rem', fontSize: '0.75rem', cursor: 'pointer' }}>Clear</button>
+            <button onClick={handleCopy} style={{ background: '#222226', border: '1px solid #2e2e33', color: '#7a7672', borderRadius: 6, padding: '0.3rem 0.7rem', fontSize: '0.75rem', cursor: 'pointer' }}>{t('settings.copy')}</button>
+            <button onClick={handleClear} style={{ background: '#222226', border: '1px solid #2e2e33', color: '#7a7672', borderRadius: 6, padding: '0.3rem 0.7rem', fontSize: '0.75rem', cursor: 'pointer' }}>{t('settings.clear')}</button>
             <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#7a7672', fontSize: '1.1rem', cursor: 'pointer' }}>✕</button>
           </div>
         </div>
         <div style={{ overflowY: 'auto', padding: '0.6rem', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
           {!logs.length && (
-            <div style={{ textAlign: 'center', color: '#7a7672', padding: '2rem', fontSize: '0.82rem' }}>No logs recorded.</div>
+            <div style={{ textAlign: 'center', color: '#7a7672', padding: '2rem', fontSize: '0.82rem' }}>{t('settings.noLogs')}</div>
           )}
           {[...logs].reverse().map((log, i) => {
             const color = log.type === 'error' || log.type === 'onerror' ? '#c97070'

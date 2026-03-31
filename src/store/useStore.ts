@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import * as storage from '../lib/storage'
 import { createKeyPair, pubkeyFromPrivkey, decodeNsec, decodeNpub } from '../lib/crypto'
 import { MAX_MESSAGES_PER_CHAT } from '../lib/constants'
+import type { Lang } from '../lib/i18n'
 
 export interface Identity {
   privkey: Uint8Array
@@ -69,6 +70,10 @@ interface AppState {
   // Relay status
   relayCount: number
   setRelayCount: (n: number) => void
+
+  // Language
+  lang: Lang
+  setLang: (lang: Lang) => void
 
   // UI
   openModal: string | null
@@ -239,6 +244,10 @@ export const useStore = create<AppState>((set, get) => ({
   // Relay status
   relayCount: 0,
   setRelayCount: (n) => set({ relayCount: n }),
+
+  // Language
+  lang: (localStorage.getItem('alina-lang') as Lang) || 'de',
+  setLang: (lang) => { localStorage.setItem('alina-lang', lang); set({ lang }) },
 
   // UI
   openModal: null,

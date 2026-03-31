@@ -1,28 +1,30 @@
 import { useState } from 'react'
 import { useStore } from '../../store/useStore'
+import { useT } from '../../hooks/useT'
 
 export function SetupScreen() {
   const createIdentity = useStore(s => s.createIdentity)
   const importIdentity = useStore(s => s.importIdentity)
+  const t = useT()
 
   const [setupName, setSetupName] = useState('')
   const [importKey, setImportKey] = useState('')
   const [importName, setImportName] = useState('')
 
   const handleCreate = () => {
-    if (!setupName.trim()) { alert('Please enter a name.'); return }
+    if (!setupName.trim()) { alert(t('setup.errorName')); return }
     createIdentity(setupName.trim())
   }
 
   const handleImport = () => {
     if (!importKey.trim() || !importName.trim()) {
-      alert('Please fill in all fields.')
+      alert(t('setup.errorFields'))
       return
     }
     try {
       importIdentity(importKey.trim(), importName.trim())
     } catch {
-      alert('Invalid private key.')
+      alert(t('setup.errorKey'))
     }
   }
 
@@ -31,32 +33,30 @@ export function SetupScreen() {
       <div className="setup-inner">
         <div className="logo-block">
           <div className="logo-name">Alina</div>
-          <div className="logo-tagline">Secure &middot; Decentralised &middot; Yours</div>
+          <div className="logo-tagline">{t('setup.tagline')}</div>
         </div>
 
         <div className="setup-card">
           <div>
-            <div className="setup-label">Your name</div>
+            <div className="setup-label">{t('setup.nameLabel')}</div>
             <input
               type="text"
-              placeholder="e.g. Kay"
+              placeholder={t('setup.namePlaceholder')}
               maxLength={30}
               value={setupName}
               onChange={e => setSetupName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleCreate()}
             />
           </div>
-          <div className="warning-box">
-            🔑 A key pair will be generated for you. Nobody but you knows your private key. Write it down — lose it and you lose your account.
-          </div>
-          <button className="btn" onClick={handleCreate}>Create new identity</button>
+          <div className="warning-box">{t('setup.keyWarning')}</div>
+          <button className="btn" onClick={handleCreate}>{t('setup.createBtn')}</button>
         </div>
 
-        <div className="setup-divider">or import existing key</div>
+        <div className="setup-divider">{t('setup.orImport')}</div>
 
         <div className="setup-card">
           <div>
-            <div className="setup-label">Private key (nsec...)</div>
+            <div className="setup-label">{t('setup.privkeyLabel')}</div>
             <input
               type="text"
               placeholder="nsec1..."
@@ -66,17 +66,17 @@ export function SetupScreen() {
             />
           </div>
           <div>
-            <div className="setup-label">Your name</div>
+            <div className="setup-label">{t('setup.nameLabel')}</div>
             <input
               type="text"
-              placeholder="e.g. Alina"
+              placeholder={t('setup.importNamePlaceholder')}
               maxLength={30}
               value={importName}
               onChange={e => setImportName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleImport()}
             />
           </div>
-          <button className="btn secondary" onClick={handleImport}>Import</button>
+          <button className="btn secondary" onClick={handleImport}>{t('setup.importBtn')}</button>
         </div>
       </div>
     </div>
