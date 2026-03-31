@@ -121,6 +121,13 @@ export const translations = {
     'utils.noMessages': 'Noch keine Nachrichten',
     'utils.image': 'Bild',
     'utils.location': 'Standort',
+    // Translation
+    'translate.autoTranslate': 'Automatisch übersetzen',
+    'translate.autoTranslateSub': 'Fremdsprachige Nachrichten werden automatisch übersetzt',
+    'translate.from': 'Übersetzt aus dem {lang}',
+    'translate.showOriginal': 'Original',
+    'translate.showTranslation': 'Übersetzung',
+    'translate.translating': 'Wird übersetzt…',
   },
 
   en: {
@@ -232,6 +239,12 @@ export const translations = {
     'utils.noMessages': 'No messages yet',
     'utils.image': 'Image',
     'utils.location': 'Location',
+    'translate.autoTranslate': 'Auto-translate',
+    'translate.autoTranslateSub': 'Foreign language messages are automatically translated',
+    'translate.from': 'Translated from {lang}',
+    'translate.showOriginal': 'Original',
+    'translate.showTranslation': 'Translation',
+    'translate.translating': 'Translating…',
   },
 
   ru: {
@@ -343,6 +356,12 @@ export const translations = {
     'utils.noMessages': 'Сообщений пока нет',
     'utils.image': 'Изображение',
     'utils.location': 'Местоположение',
+    'translate.autoTranslate': 'Авто-перевод',
+    'translate.autoTranslateSub': 'Сообщения на иностранных языках переводятся автоматически',
+    'translate.from': 'Переведено с {lang}',
+    'translate.showOriginal': 'Оригинал',
+    'translate.showTranslation': 'Перевод',
+    'translate.translating': 'Перевожу…',
   },
 } as const
 

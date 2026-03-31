@@ -19,6 +19,8 @@ export function SettingsModal() {
   const showStatus = useStore(s => s.showStatus)
   const lang = useStore(s => s.lang)
   const setLang = useStore(s => s.setLang)
+  const autoTranslate = useStore(s => s.autoTranslate)
+  const setAutoTranslate = useStore(s => s.setAutoTranslate)
   const t = useT()
 
   const [name, setName] = useState(identity?.name ?? '')
@@ -71,6 +73,29 @@ export function SettingsModal() {
         </div>
 
         <div className="warning-box">{t('settings.keyWarning')}</div>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+          <div>
+            <div style={{ fontSize: '0.82rem', fontWeight: 500, color: 'var(--text)' }}>{t('translate.autoTranslate')}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.15rem' }}>{t('translate.autoTranslateSub')}</div>
+          </div>
+          <button
+            onClick={() => setAutoTranslate(!autoTranslate)}
+            style={{
+              flexShrink: 0, width: 44, height: 24, borderRadius: 12,
+              background: autoTranslate ? 'var(--accent)' : 'var(--surface2)',
+              border: `1px solid ${autoTranslate ? 'var(--accent)' : 'var(--border)'}`,
+              cursor: 'pointer', position: 'relative', transition: 'background 0.2s',
+            }}
+          >
+            <span style={{
+              position: 'absolute', top: 3, left: autoTranslate ? 23 : 3,
+              width: 16, height: 16, borderRadius: '50%',
+              background: autoTranslate ? '#1a1a1b' : 'var(--muted)',
+              transition: 'left 0.2s',
+            }} />
+          </button>
+        </div>
 
         <div>
           <div className="setup-label">{t('settings.language')}</div>

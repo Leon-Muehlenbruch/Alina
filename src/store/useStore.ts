@@ -26,6 +26,8 @@ export interface Message {
   pubkey: string
   name?: string
   ts: number
+  translated?: string
+  detectedLang?: string
 }
 
 export interface ActiveChat {
@@ -74,6 +76,11 @@ interface AppState {
   // Language
   lang: Lang
   setLang: (lang: Lang) => void
+
+  // Auto-translate
+  autoTranslate: boolean
+  setAutoTranslate: (v: boolean) => void
+  setMessageTranslation: (chatId: string, ts: number, pubkey: string, translated: string, detectedLang: string) => void
 
   // UI
   openModal: string | null
@@ -248,6 +255,22 @@ export const useStore = create<AppState>((set, get) => ({
   // Language
   lang: (localStorage.getItem('alina-lang') as Lang) || 'de',
   setLang: (lang) => { localStorage.setItem('alina-lang', lang); set({ lang }) },
+
+  // Auto-translate
+  autoTranslate: localStorage.getItem('alina-autotranslate') === 'true',
+  setAutoTranslate: (v) => { localStorage.setItem('alina-autotranslate', String(v)); set({ autoTranslate: v }) },
+  setMessageTranslation: (chatId, ts, pubkey, translated, detectedLang) => {
+    const { messages } = get()
+    const msgs = messages[chatId]
+    if (!msgs) return
+    const idx = msgs.findIndex(m => m.ts === ts && m.pubkey === pubkey)
+    if (idx === -1) return
+    const updated = [...msgs]
+    updated[idx] = { ...updated[idx], translated, detectedLang }
+    const newMessages = { ...messages, [chatId]: updated }
+    storage.saveMessages(newMessages)
+    set({ messages: newMessages })
+  },
 
   // UI
   openModal: null,
