@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useStore } from './store/useStore'
 import { useNostrRelays } from './hooks/useNostrRelays'
 import { SetupScreen } from './components/setup/SetupScreen'
@@ -13,8 +14,13 @@ export function App() {
   const openModal = useStore(s => s.openModal)
   const setOpenModal = useStore(s => s.setOpenModal)
 
-  // Connect to Nostr relays when identity is available
   useNostrRelays()
+
+  // Apply brand colour to pwa-install dialog
+  useEffect(() => {
+    const el = document.querySelector('pwa-install') as any
+    if (el) el.styles = { '--tint-color': '#c8a97e' }
+  }, [])
 
   if (!identity) {
     return <SetupScreen />

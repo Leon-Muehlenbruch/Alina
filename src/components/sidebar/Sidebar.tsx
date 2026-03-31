@@ -1,8 +1,9 @@
+import { useState, useEffect } from 'react'
 import { useStore } from '../../store/useStore'
 import { useT } from '../../hooks/useT'
 import { ChatList } from './ChatList'
 import { RELAYS } from '../../lib/constants'
-import { Settings, MessageCirclePlus, Users } from 'lucide-react'
+import { Settings, MessageCirclePlus, Users, Download } from 'lucide-react'
 
 export function Sidebar() {
   const setOpenModal = useStore(s => s.setOpenModal)
@@ -10,6 +11,21 @@ export function Sidebar() {
   const relayCount = useStore(s => s.relayCount)
   const total = RELAYS.length
   const t = useT()
+  const [installAvailable, setInstallAvailable] = useState(false)
+
+  useEffect(() => {
+    const el = document.querySelector('pwa-install') as any
+    if (!el) return
+    if (el.isInstallAvailable) setInstallAvailable(true)
+    const handler = () => setInstallAvailable(true)
+    el.addEventListener('pwa-install-available-event', handler)
+    return () => el.removeEventListener('pwa-install-available-event', handler)
+  }, [])
+
+  const handleInstall = () => {
+    const el = document.querySelector('pwa-install') as any
+    el?.showDialog(true)
+  }
 
   const dotColor = relayCount === 0 ? '#e07070' : relayCount < total / 2 ? '#e0b870' : '#70c070'
 
@@ -27,6 +43,15 @@ export function Sidebar() {
             }}
           />
         </span>
+        {installAvailable && (
+          <button
+            className="btn icon-btn"
+            title={t('sidebar.install')}
+            onClick={handleInstall}
+          >
+            <Download size={17} />
+          </button>
+        )}
         <button
           className="btn icon-btn"
           title={t('sidebar.settings')}

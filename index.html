@@ -20,6 +20,12 @@
 </head>
 <body>
   <div id="root"></div>
+  <pwa-install
+    manifest-url="/manifest.webmanifest"
+    use-local-storage
+    manual-apple
+    manual-chrome
+  ></pwa-install>
   <script type="module" src="/src/main.tsx"></script>
 </body>
 </html>

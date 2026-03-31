@@ -116,6 +116,7 @@ export const translations = {
     'sidebar.settings': 'Einstellungen',
     'sidebar.newChat': 'Neuer Chat',
     'sidebar.group': 'Gruppe',
+    'sidebar.install': 'App installieren',
     // Utils
     'utils.yesterday': 'Gestern',
     'utils.noMessages': 'Noch keine Nachrichten',
@@ -235,6 +236,7 @@ export const translations = {
     'sidebar.settings': 'Settings',
     'sidebar.newChat': 'New chat',
     'sidebar.group': 'Group',
+    'sidebar.install': 'Install app',
     'utils.yesterday': 'Yesterday',
     'utils.noMessages': 'No messages yet',
     'utils.image': 'Image',
@@ -352,6 +354,7 @@ export const translations = {
     'sidebar.settings': 'Настройки',
     'sidebar.newChat': 'Новый чат',
     'sidebar.group': 'Группа',
+    'sidebar.install': 'Установить приложение',
     'utils.yesterday': 'Вчера',
     'utils.noMessages': 'Сообщений пока нет',
     'utils.image': 'Изображение',
