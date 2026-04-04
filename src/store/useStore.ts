@@ -29,6 +29,8 @@ export interface Message {
   eventId?: string
   translated?: string
   detectedLang?: string
+  ttl?: number        // time-to-live in seconds (e.g. 30, 300, 3600)
+  expiresAt?: number  // absolute timestamp (ms) when the message should vanish
 }
 
 export interface ActiveChat {
@@ -77,6 +79,9 @@ interface AppState {
   // Language
   lang: Lang
   setLang: (lang: Lang) => void
+
+  // Ephemeral messages
+  removeExpiredMessages: () => void
 
   // Auto-translate
   autoTranslate: boolean
@@ -254,6 +259,25 @@ export const useStore = create<AppState>((set, get) => ({
   // Relay status
   relayCount: 0,
   setRelayCount: (n) => set({ relayCount: n }),
+
+  // Ephemeral messages — remove all expired messages across all chats
+  removeExpiredMessages: () => {
+    const { messages } = get()
+    const now = Date.now()
+    let changed = false
+    const updated: Record<string, Message[]> = {}
+
+    for (const [chatId, msgs] of Object.entries(messages)) {
+      const filtered = msgs.filter(m => !m.expiresAt || m.expiresAt > now)
+      if (filtered.length !== msgs.length) changed = true
+      updated[chatId] = filtered
+    }
+
+    if (changed) {
+      storage.saveMessages(updated)
+      set({ messages: updated })
+    }
+  },
 
   // Language
   lang: (localStorage.getItem('alina-lang') as Lang) || 'en',

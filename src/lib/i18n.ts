@@ -60,6 +60,14 @@ export const translations = {
     'image.compressing': 'Optimizing…',
     'image.compressionFailed': 'Could not process image.',
     'image.send': 'Send',
+    // Ephemeral / self-destructing messages
+    'ephemeral.off': 'Off',
+    'ephemeral.seconds': '{n}s',
+    'ephemeral.minutes': '{n}m',
+    'ephemeral.hours': '{n}h',
+    'ephemeral.active': 'Self-destruct: {label}',
+    'ephemeral.tooltip': 'Self-destructing messages',
+    'ephemeral.vanished': 'This message has vanished.',
     // Message
     'msg.openMap': 'Open in map ↗',
     'msg.start': 'Start of conversation · End-to-end encrypted',
@@ -257,6 +265,14 @@ export const translations = {
     'image.compressing': 'Оптимизация…',
     'image.compressionFailed': 'Не удалось обработать изображение.',
     'image.send': 'Отправить',
+    // Ephemeral / self-destructing messages
+    'ephemeral.off': 'Выкл',
+    'ephemeral.seconds': '{n}с',
+    'ephemeral.minutes': '{n}м',
+    'ephemeral.hours': '{n}ч',
+    'ephemeral.active': 'Самоуничтожение: {label}',
+    'ephemeral.tooltip': 'Самоуничтожающиеся сообщения',
+    'ephemeral.vanished': 'Это сообщение исчезло.',
     // Message
     'msg.openMap': 'Открыть на карте ↗',
     'msg.start': 'Начало разговора · Сквозное шифрование',    // Add contact

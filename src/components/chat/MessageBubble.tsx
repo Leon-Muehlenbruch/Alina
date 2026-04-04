@@ -1,5 +1,5 @@
 import { useState, useEffect, memo } from 'react'
-import { MapPin } from 'lucide-react'
+import { MapPin, Timer } from 'lucide-react'
 import type { Message } from '../../store/useStore'
 import { useStore } from '../../store/useStore'
 import { useT } from '../../hooks/useT'
@@ -44,12 +44,32 @@ export const MessageBubble = memo(function MessageBubble({ msg, isMine, isRoom, 
     }).catch(() => setTranslating(false))
   }, [autoTranslate, msg.content, msg.translated, lang]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Ephemeral countdown
+  const [remaining, setRemaining] = useState<number | null>(null)
+  useEffect(() => {
+    if (!msg.expiresAt) return
+    const update = () => {
+      const left = Math.max(0, Math.ceil((msg.expiresAt! - Date.now()) / 1000))
+      setRemaining(left)
+    }
+    update()
+    const id = setInterval(update, 1000)
+    return () => clearInterval(id)
+  }, [msg.expiresAt])
+
+  const isEphemeral = !!msg.expiresAt
+  const ephemeralLabel = remaining !== null && remaining > 0
+    ? remaining >= 3600 ? `${Math.ceil(remaining / 3600)}h`
+      : remaining >= 60 ? `${Math.ceil(remaining / 60)}m`
+      : `${remaining}s`
+    : null
+
   const displayText = msg.type === 'text'
     ? (msg.translated && !showOriginal ? msg.translated : msg.content)
     : msg.content
 
   return (
-    <div className={`msg-row ${isMine ? 'mine' : 'theirs'}`}>
+    <div className={`msg-row ${isMine ? 'mine' : 'theirs'}${isEphemeral ? ' ephemeral' : ''}`}>
       {!isMine && isRoom && senderName && (
         <div className="msg-sender">{senderName}</div>
       )}
@@ -89,7 +109,15 @@ export const MessageBubble = memo(function MessageBubble({ msg, isMine, isRoom, 
         </div>
       )}
 
-      <div className="msg-time">{formatTime(msg.ts, lang)}</div>
+      <div className="msg-time">
+        {formatTime(msg.ts, lang)}
+        {isEphemeral && ephemeralLabel && (
+          <span className="msg-ephemeral-badge">
+            <Timer size={11} />
+            {ephemeralLabel}
+          </span>
+        )}
+      </div>
     </div>
   )
 })

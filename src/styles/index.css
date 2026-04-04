@@ -1197,3 +1197,82 @@ input[type="text"]:focus { border-color: var(--accent); }
   .nav-right { gap: 1rem; }
   .landing-page section { padding: 5rem 1.5rem; }
 }
+
+
+/* ── TTL Picker ──────────────────────────────────────────── */
+.ttl-picker-wrapper {
+  position: relative;
+}
+.ttl-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0.3rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  transition: color 0.15s, background 0.15s;
+}
+.ttl-btn:hover { color: var(--text); background: var(--surface2); }
+.ttl-btn.active { color: var(--accent); }
+.ttl-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+.ttl-dropdown {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 50;
+  min-width: 80px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+.ttl-option {
+  background: none;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  padding: 0.4rem 0.7rem;
+  border-radius: 7px;
+  font-size: 0.82rem;
+  text-align: center;
+  font-family: var(--font-body);
+  transition: background 0.12s;
+}
+.ttl-option:hover { background: var(--border); }
+.ttl-option.selected {
+  background: var(--accent);
+  color: #000;
+  font-weight: 600;
+}
+
+/* ── Ephemeral message styles ────────────────────────────── */
+.msg-row.ephemeral .msg-bubble {
+  border: 1px dashed var(--accent);
+  position: relative;
+}
+.msg-ephemeral-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--accent);
+  font-size: 0.68rem;
+  margin-left: 0.4rem;
+  font-weight: 500;
+}
+@keyframes ephemeralFade {
+  0% { opacity: 1; }
+  70% { opacity: 1; }
+  100% { opacity: 0; transform: scale(0.95); }
+}

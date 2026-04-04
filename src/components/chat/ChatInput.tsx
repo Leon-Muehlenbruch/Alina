@@ -6,6 +6,7 @@ import { publishDM, publishRoomMessage, getRelayCount } from '../../lib/nostr'
 import { enqueue, isOnline } from '../../lib/offlineQueue'
 import { EmojiPicker } from './EmojiPicker'
 import { ImagePreview } from './ImagePreview'
+import { TtlPicker } from './TtlPicker'
 
 export function ChatInput() {
   const activeChat = useStore(s => s.activeChat)
@@ -18,6 +19,7 @@ export function ChatInput() {
   const [text, setText] = useState('')
   const [emojiOpen, setEmojiOpen] = useState(false)
   const [imageFile, setImageFile] = useState<File | null>(null)
+  const [ttl, setTtl] = useState(0) // 0 = normal message, >0 = self-destruct in seconds
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -27,8 +29,18 @@ export function ChatInput() {
   }, [])
   const publishMessage = async (msgData: { type: string; content: string }) => {
     if (!activeChat || !identity) return
-    const localMsg = { type: msgData.type as 'text' | 'image' | 'location', content: msgData.content, pubkey: identity.pubkey, ts: Date.now() }
+    const now = Date.now()
+    const localMsg = {
+      type: msgData.type as 'text' | 'image' | 'location',
+      content: msgData.content,
+      pubkey: identity.pubkey,
+      ts: now,
+      ...(ttl > 0 ? { ttl, expiresAt: now + ttl * 1000 } : {}),
+    }
     addMessage(activeChat.chatId, localMsg)
+
+    // Include TTL in the wire payload so the receiver knows it's ephemeral
+    const wireData = ttl > 0 ? { ...msgData, ttl } : msgData
 
     // If offline or no relays connected, queue for later
     if (!isOnline() || getRelayCount() === 0) {
@@ -37,7 +49,7 @@ export function ChatInput() {
         chatType: activeChat.type,
         chatId: activeChat.chatId,
         recipientOrRoomHash: activeChat.id,
-        msgData: activeChat.type === 'room' ? { ...msgData, name: identity.name } : msgData,
+        msgData: activeChat.type === 'room' ? { ...wireData, name: identity.name } : wireData,
         timestamp: Date.now(),
       })
       showStatus(t('input.queuedOffline'), 3000)
@@ -46,9 +58,9 @@ export function ChatInput() {
 
     try {
       if (activeChat.type === 'dm') {
-        await publishDM(identity.privkey, identity.pubkey, activeChat.id, msgData)
+        await publishDM(identity.privkey, identity.pubkey, activeChat.id, wireData)
       } else {
-        await publishRoomMessage(identity.privkey, identity.pubkey, activeChat.id, { ...msgData, name: identity.name })
+        await publishRoomMessage(identity.privkey, identity.pubkey, activeChat.id, { ...wireData, name: identity.name })
       }
     } catch (e) { console.warn('Publish failed:', e) }
   }
@@ -109,6 +121,7 @@ export function ChatInput() {
       <button className="loc-btn" onClick={handleLocation} title={t('input.sendLocation')}>
         <MapPin size={18} />
       </button>
+      <TtlPicker value={ttl} onChange={setTtl} />
 
       <div className="input-wrapper">
         <textarea

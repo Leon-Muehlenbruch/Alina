@@ -185,12 +185,18 @@ async function handleDM(event: { id?: string; pubkey: string; content: string; c
   try {
     const decrypted = await decryptDM(state.privkey, fromPubkey, event.content)
     const parsed = JSON.parse(decrypted)
+    const now = Date.now()
+    const ttl = parsed.ttl ? Number(parsed.ttl) : undefined
+    const expiresAt = ttl ? now + ttl * 1000 : undefined
+    // If already expired (clock drift), skip
+    if (expiresAt && expiresAt <= now) return
     const msg: Message = {
       type: parsed.type || 'text',
       content: parsed.content,
       pubkey: fromPubkey,
       ts: event.created_at * 1000,
       eventId: event.id,
+      ...(ttl ? { ttl, expiresAt } : {}),
     }
     onMessageCallback?.(chatId, msg)
   } catch (e) {
@@ -213,6 +219,10 @@ function handleRoomMsg(event: { id?: string; pubkey: string; content: string; cr
 
   try {
     const parsed = JSON.parse(event.content)
+    const now = Date.now()
+    const ttl = parsed.ttl ? Number(parsed.ttl) : undefined
+    const expiresAt = ttl ? now + ttl * 1000 : undefined
+    if (expiresAt && expiresAt <= now) return
     const displayName = state.contacts[fromPubkey]?.name
       || parsed.name
       || fromPubkey.slice(0, 8) + '...'
@@ -223,6 +233,7 @@ function handleRoomMsg(event: { id?: string; pubkey: string; content: string; cr
       name: displayName,
       ts: event.created_at * 1000,
       eventId: event.id,
+      ...(ttl ? { ttl, expiresAt } : {}),
     }
     onMessageCallback?.(chatId, msg)
   } catch (e) {

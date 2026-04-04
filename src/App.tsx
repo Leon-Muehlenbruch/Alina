@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useStore } from './store/useStore'
 import { useNostrRelays } from './hooks/useNostrRelays'
+import { useEphemeralCleanup } from './hooks/useEphemeralCleanup'
 import { SetupScreen } from './components/setup/SetupScreen'
 import { Sidebar } from './components/sidebar/Sidebar'
 import { ChatArea } from './components/chat/ChatArea'
@@ -15,6 +16,7 @@ export function App() {
   const setOpenModal = useStore(s => s.setOpenModal)
 
   useNostrRelays()
+  useEphemeralCleanup()
 
   // Apply brand colour to pwa-install dialog
   useEffect(() => {
