@@ -114,6 +114,9 @@ export const translations = {
     'sidebar.settings': 'Einstellungen',    'sidebar.newChat': 'Neuer Chat',
     'sidebar.group': 'Gruppe',
     'sidebar.install': 'App installieren',
+    // Contact list
+    'contact.empty': 'Noch keine Kontakte.',
+    'contact.emptySub': 'Tippe + um jemanden hinzuzufügen.',
     // Utils
     'utils.yesterday': 'Gestern',
     'utils.noMessages': 'Noch keine Nachrichten',
@@ -231,6 +234,8 @@ export const translations = {
     'sidebar.newChat': 'New chat',
     'sidebar.group': 'Group',
     'sidebar.install': 'Install app',
+    'contact.empty': 'No contacts yet.',
+    'contact.emptySub': 'Tap + to add someone.',
     'utils.yesterday': 'Yesterday',
     'utils.noMessages': 'No messages yet',
     'utils.image': 'Image',
@@ -346,6 +351,8 @@ export const translations = {
     'sidebar.newChat': 'Новый чат',
     'sidebar.group': 'Группа',
     'sidebar.install': 'Установить приложение',
+    'contact.empty': 'Контактов пока нет.',
+    'contact.emptySub': 'Нажми +, чтобы добавить.',
     'utils.yesterday': 'Вчера',
     'utils.noMessages': 'Сообщений пока нет',
     'utils.image': 'Изображение',

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useStore } from '../../store/useStore'
+import { useT } from '../../hooks/useT'
 import { Avatar } from '../ui/Avatar'
 import { lastMsgPreview } from '../../lib/utils'
 
@@ -13,6 +14,7 @@ export function ContactList() {
   const renameContact = useStore(s => s.renameContact)
   const deleteContact = useStore(s => s.deleteContact)
 
+  const t = useT()
   const [menuPubkey, setMenuPubkey] = useState<string | null>(null)
   const [renaming, setRenaming] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState('')
@@ -61,7 +63,7 @@ export function ContactList() {
 
   const handleDelete = (pubkey: string, name: string) => {
     setMenuPubkey(null)
-    if (confirm(`„${name}" löschen? Der Chat-Verlauf wird ebenfalls gelöscht.`)) {
+    if (confirm(t('list.deleteConfirm', { name }))) {
       deleteContact(pubkey)
     }
   }
@@ -71,7 +73,7 @@ export function ContactList() {
   if (!items.length) {
     return (
       <div className="sidebar-empty">
-        Noch keine Kontakte.<br />Tippe + um jemanden hinzuzufügen.
+        {t('contact.empty')}<br />{t('contact.emptySub')}
       </div>
     )
   }
@@ -122,7 +124,7 @@ export function ContactList() {
                 className="btn icon-btn"
                 style={{ opacity: 0.5, fontSize: '0.8rem', padding: '0.2rem 0.35rem' }}
                 onClick={e => openMenu(e, c.pubkey)}
-                title="Optionen"
+                title={t('list.options')}
               >
                 ⋯
               </button>
@@ -143,13 +145,13 @@ export function ContactList() {
                   style={{ display: 'block', width: '100%', padding: '0.55rem 0.9rem', textAlign: 'left', background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', fontSize: '0.82rem' }}
                   onClick={() => startRename(c.pubkey, c.name)}
                 >
-                  ✏️ Umbenennen
+                  ✏️ {t('list.rename')}
                 </button>
                 <button
                   style={{ display: 'block', width: '100%', padding: '0.55rem 0.9rem', textAlign: 'left', background: 'none', border: 'none', color: '#e07070', cursor: 'pointer', fontSize: '0.82rem' }}
                   onClick={() => handleDelete(c.pubkey, c.name)}
                 >
-                  🗑 Löschen
+                  🗑 {t('list.delete')}
                 </button>
               </div>
             )}

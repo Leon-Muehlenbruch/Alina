@@ -38,7 +38,7 @@ export function MessageList({ onImageClick }: MessageListProps) {
 
         return (
           <MessageBubble
-            key={`${msg.ts}-${msg.pubkey}-${i}`}
+            key={msg.eventId || `${msg.ts}-${msg.pubkey}-${i}`}
             msg={msg}
             isMine={isMine}
             isRoom={activeChat.type === 'room'}
