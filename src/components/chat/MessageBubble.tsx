@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, memo } from 'react'
 import { MapPin } from 'lucide-react'
 import type { Message } from '../../store/useStore'
 import { useStore } from '../../store/useStore'
@@ -14,7 +14,7 @@ interface MessageBubbleProps {
   onImageClick: (src: string) => void
 }
 
-export function MessageBubble({ msg, isMine, isRoom, senderName, onImageClick }: MessageBubbleProps) {
+export const MessageBubble = memo(function MessageBubble({ msg, isMine, isRoom, senderName, onImageClick }: MessageBubbleProps) {
   const lang = useStore(s => s.lang)
   const autoTranslate = useStore(s => s.autoTranslate)
   const setMessageTranslation = useStore(s => s.setMessageTranslation)
@@ -23,7 +23,6 @@ export function MessageBubble({ msg, isMine, isRoom, senderName, onImageClick }:
 
   const [showOriginal, setShowOriginal] = useState(false)
   const [translating, setTranslating] = useState(false)
-
   // Trigger translation for incoming text messages
   useEffect(() => {
     if (
@@ -54,7 +53,6 @@ export function MessageBubble({ msg, isMine, isRoom, senderName, onImageClick }:
       {!isMine && isRoom && senderName && (
         <div className="msg-sender">{senderName}</div>
       )}
-
       {msg.type === 'image' ? (
         <div className="msg-bubble image-msg">
           <img
@@ -84,8 +82,7 @@ export function MessageBubble({ msg, isMine, isRoom, senderName, onImageClick }:
               <button
                 className="msg-translate-toggle"
                 onClick={() => setShowOriginal(p => !p)}
-              >
-                {showOriginal ? t('translate.showTranslation') : t('translate.showOriginal')}
+              >                {showOriginal ? t('translate.showTranslation') : t('translate.showOriginal')}
               </button>
             </>
           )}
@@ -95,23 +92,26 @@ export function MessageBubble({ msg, isMine, isRoom, senderName, onImageClick }:
       <div className="msg-time">{formatTime(msg.ts, lang)}</div>
     </div>
   )
-}
+})
 
 function LocationBubble({ content, isMine, openMapLabel }: { content: string; isMine: boolean; openMapLabel: string }) {
   try {
     const data = JSON.parse(content)
+    const isCoordFallback = data.words && /^-?\d+\.\d+,-?\d+\.\d+$/.test(data.words)
+    const mapUrl = isCoordFallback
+      ? `https://www.google.com/maps?q=${data.lat},${data.lng}`
+      : `https://what3words.com/${data.words}`
     return (
       <div className="msg-bubble location-msg">
         <MapPin size={18} style={{ flexShrink: 0 }} />
         <div>
-          <div className="location-words">{data.words}</div>
+          <div className="location-words">{isCoordFallback ? `📍 ${data.lat.toFixed(4)}, ${data.lng.toFixed(4)}` : data.words}</div>
           <a
             className={`location-link${isMine ? ' mine' : ''}`}
-            href={`https://what3words.com/${data.words}`}
+            href={mapUrl}
             target="_blank"
             rel="noopener noreferrer"
-          >
-            {openMapLabel}
+          >            {openMapLabel}
           </a>
         </div>
       </div>

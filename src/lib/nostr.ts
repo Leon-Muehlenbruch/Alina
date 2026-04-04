@@ -1,6 +1,11 @@
-import { RELAYS, RECONNECT_DELAY, INVITE_KIND, INVITE_CODE_DURATION } from './constants'
+import { RELAYS, INVITE_KIND, INVITE_CODE_DURATION } from './constants'
 import { createSignedEvent, isValidEvent, encryptDM, decryptDM, hashInviteCode } from './crypto'
+import { saveLog } from './storage'
 import type { Message } from '../store/useStore'
+
+const BASE_RECONNECT_DELAY = 5000
+const MAX_RECONNECT_DELAY = 120000
+const relayfailures: Record<string, number> = {}
 
 export interface RelayConnection {
   url: string
@@ -19,7 +24,6 @@ let getStateCallback: (() => {
   contacts: Record<string, { pubkey: string; name: string }>
   rooms: Record<string, { name: string; hash: string }>
 }) | null = null
-
 export function setOnMessage(cb: typeof onMessageCallback): void {
   onMessageCallback = cb
 }
@@ -46,7 +50,6 @@ export function setRelayCountListener(cb: RelayCountListener | null): void {
 function notifyRelayCount(): void {
   relayCountListener?.(relays.length)
 }
-
 function subscribeAll(ws: WebSocket): void {
   const state = getStateCallback?.()
   if (!state?.pubkey) return
@@ -67,18 +70,27 @@ function connectRelay(url: string): void {
   try {
     const ws = new WebSocket(url)
     ws.onopen = () => {
+      relayfailures[url] = 0
       relays.push({ url, ws })
       notifyRelayCount()
       subscribeAll(ws)
+      saveLog('relay', `Connected to ${url}`)
     }
-    ws.onmessage = (e) => handleRelayMessage(e.data)
-    ws.onerror = () => {}
-    ws.onclose = () => {
+    ws.onmessage = (e) => handleRelayMessage(e.data)    ws.onerror = (e) => {
+      saveLog('relay-error', `WebSocket error on ${url}: ${String(e)}`)
+    }
+    ws.onclose = (e) => {
       relays = relays.filter(r => r.url !== url)
       notifyRelayCount()
-      setTimeout(() => connectRelay(url), RECONNECT_DELAY)
+      const failures = (relayfailures[url] || 0) + 1
+      relayfailures[url] = failures
+      const delay = Math.min(BASE_RECONNECT_DELAY * Math.pow(2, failures - 1), MAX_RECONNECT_DELAY)
+      saveLog('relay', `Disconnected from ${url} (code ${e.code}), reconnect in ${Math.round(delay / 1000)}s`)
+      setTimeout(() => connectRelay(url), delay)
     }
-  } catch { /* ignore */ }
+  } catch (e) {
+    saveLog('relay-error', `Failed to connect to ${url}: ${String(e)}`)
+  }
 }
 
 export function connectAllRelays(): void {
@@ -87,16 +99,19 @@ export function connectAllRelays(): void {
 
 export function disconnectAllRelays(): void {
   relays.forEach(r => {
-    try { r.ws.close() } catch { /* ignore */ }
+    try { r.ws.close() } catch (e) {
+      saveLog('relay-error', `Error closing ${r.url}: ${String(e)}`)
+    }
   })
   relays = []
   notifyRelayCount()
 }
-
 export function publishToRelays(event: object): void {
   const msg = JSON.stringify(['EVENT', event])
   relays.forEach(r => {
-    try { r.ws.send(msg) } catch { /* ignore */ }
+    try { r.ws.send(msg) } catch (e) {
+      saveLog('relay-error', `Failed to publish to ${r.url}: ${String(e)}`)
+    }
   })
 }
 
@@ -105,7 +120,9 @@ export function subscribeToRoom(roomHash: string): void {
     try {
       const sub = JSON.stringify(['REQ', 'room-' + roomHash.slice(0, 8), { kinds: [42], '#e': [roomHash], limit: 100 }])
       r.ws.send(sub)
-    } catch { /* ignore */ }
+    } catch (e) {
+      saveLog('relay-error', `Failed to subscribe to room on ${r.url}: ${String(e)}`)
+    }
   })
 }
 
@@ -117,8 +134,7 @@ async function handleRelayMessage(raw: string): Promise<void> {
   try {
     const data = JSON.parse(raw)
 
-    if (data[0] === 'EVENT') {
-      const subId = data[1] as string
+    if (data[0] === 'EVENT') {      const subId = data[1] as string
       const event = data[2]
 
       // Handle invite lookup responses
@@ -126,7 +142,9 @@ async function handleRelayMessage(raw: string): Promise<void> {
       if (inviteHandler && event.kind === INVITE_KIND) {
         pendingInviteLookups.delete(subId)
         relays.forEach(r => {
-          try { r.ws.send(JSON.stringify(['CLOSE', subId])) } catch { /* ignore */ }
+          try { r.ws.send(JSON.stringify(['CLOSE', subId])) } catch (e) {
+            saveLog('relay-error', `Failed to close invite sub on ${r.url}: ${String(e)}`)
+          }
         })
         try {
           const parsed = JSON.parse(event.content)
@@ -145,10 +163,11 @@ async function handleRelayMessage(raw: string): Promise<void> {
         handleRoomMsg(event)
       }
     }
-  } catch { /* ignore */ }
+  } catch (e) {    saveLog('relay-error', `Failed to handle relay message: ${String(e)}`)
+  }
 }
 
-async function handleDM(event: { pubkey: string; content: string; created_at: number }): Promise<void> {
+async function handleDM(event: { id?: string; pubkey: string; content: string; created_at: number }): Promise<void> {
   const state = getStateCallback?.()
   if (!state?.privkey || !state.pubkey) return
 
@@ -165,12 +184,14 @@ async function handleDM(event: { pubkey: string; content: string; created_at: nu
       content: parsed.content,
       pubkey: fromPubkey,
       ts: event.created_at * 1000,
+      eventId: event.id,
     }
     onMessageCallback?.(chatId, msg)
-  } catch { /* ignore */ }
+  } catch (e) {
+    saveLog('decrypt-error', `Failed to decrypt DM from ${fromPubkey.slice(0, 8)}...: ${String(e)}`)
+  }
 }
-
-function handleRoomMsg(event: { pubkey: string; content: string; created_at: number; tags: string[][] }): void {
+function handleRoomMsg(event: { id?: string; pubkey: string; content: string; created_at: number; tags: string[][] }): void {
   const state = getStateCallback?.()
   if (!state) return
 
@@ -194,11 +215,13 @@ function handleRoomMsg(event: { pubkey: string; content: string; created_at: num
       pubkey: fromPubkey,
       name: displayName,
       ts: event.created_at * 1000,
+      eventId: event.id,
     }
     onMessageCallback?.(chatId, msg)
-  } catch { /* ignore */ }
+  } catch (e) {
+    saveLog('room-error', `Failed to parse room message: ${String(e)}`)
+  }
 }
-
 export async function publishDM(
   privkey: Uint8Array,
   myPubkey: string,
@@ -226,8 +249,7 @@ export async function publishInviteCode(
   const codeHash = await hashInviteCode(code)
   const expiration = Math.floor(Date.now() / 1000) + INVITE_CODE_DURATION
   const event = createSignedEvent({
-    kind: INVITE_KIND,
-    created_at: Math.floor(Date.now() / 1000),
+    kind: INVITE_KIND,    created_at: Math.floor(Date.now() / 1000),
     tags: [
       ['t', codeHash],
       ['expiration', expiration.toString()],
@@ -254,7 +276,6 @@ export async function lookupInviteCode(code: string): Promise<InviteResult | nul
 
     pendingInviteLookups.set(subId, done)
     setTimeout(() => done(null), 8000)
-
     const sub = JSON.stringify(['REQ', subId, {
       kinds: [INVITE_KIND],
       '#t': [codeHash],
@@ -268,7 +289,9 @@ export async function lookupInviteCode(code: string): Promise<InviteResult | nul
     }
 
     relays.forEach(r => {
-      try { r.ws.send(sub) } catch { /* ignore */ }
+      try { r.ws.send(sub) } catch (e) {
+        saveLog('relay-error', `Failed to send invite lookup to ${r.url}: ${String(e)}`)
+      }
     })
   })
 }
@@ -281,8 +304,7 @@ export async function publishRoomMessage(
 ): Promise<void> {
   const payload = JSON.stringify(msgData)
   const event = createSignedEvent({
-    kind: 42,
-    created_at: Math.floor(Date.now() / 1000),
+    kind: 42,    created_at: Math.floor(Date.now() / 1000),
     tags: [['e', roomHash, '', 'root']],
     content: payload,
     pubkey: myPubkey,

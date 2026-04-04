@@ -3,6 +3,11 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: [],
+  },
   plugins: [
     react(),
     VitePWA({
@@ -20,8 +25,7 @@ export default defineConfig({
           {
             urlPattern: /^https:\/\/fonts\.gstatic\.com/,
             handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts-webfonts',
+            options: {              cacheName: 'google-fonts-webfonts',
               expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
             },
           },

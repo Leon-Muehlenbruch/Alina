@@ -9,6 +9,19 @@ const KEYS = {
   logs: 'alina_logs',
 } as const
 
+/** Safe localStorage.setItem with quota error handling */
+function safeSave(key: string, value: string): boolean {
+  try {
+    localStorage.setItem(key, value)
+    return true
+  } catch (e) {
+    // QuotaExceededError — log and warn user
+    console.error(`localStorage quota exceeded for key "${key}":`, e)
+    saveLog('storage-error', `Quota exceeded saving "${key}" (${Math.round(value.length / 1024)} KB)`)
+    return false
+  }
+}
+
 export function loadIdentity(): Identity | null {
   try {
     const raw = localStorage.getItem(KEYS.identity)
@@ -19,13 +32,13 @@ export function loadIdentity(): Identity | null {
       pubkey: data.pubkey,
       name: data.name || 'Ich',
     }
-  } catch {
+  } catch (e) {
+    console.error('Failed to load identity:', e)
     return null
   }
 }
-
 export function saveIdentity(identity: Identity): void {
-  localStorage.setItem(KEYS.identity, JSON.stringify({
+  safeSave(KEYS.identity, JSON.stringify({
     privkey: Array.from(identity.privkey),
     pubkey: identity.pubkey,
     name: identity.name,
@@ -35,51 +48,53 @@ export function saveIdentity(identity: Identity): void {
 export function loadContacts(): Record<string, Contact> {
   try {
     return JSON.parse(localStorage.getItem(KEYS.contacts) || '{}')
-  } catch {
+  } catch (e) {
+    console.error('Failed to load contacts:', e)
     return {}
   }
 }
 
 export function saveContacts(contacts: Record<string, Contact>): void {
-  localStorage.setItem(KEYS.contacts, JSON.stringify(contacts))
+  safeSave(KEYS.contacts, JSON.stringify(contacts))
 }
 
 export function loadRooms(): Record<string, Room> {
   try {
     return JSON.parse(localStorage.getItem(KEYS.rooms) || '{}')
-  } catch {
+  } catch (e) {
+    console.error('Failed to load rooms:', e)
     return {}
   }
 }
-
 export function saveRooms(rooms: Record<string, Room>): void {
-  localStorage.setItem(KEYS.rooms, JSON.stringify(rooms))
+  safeSave(KEYS.rooms, JSON.stringify(rooms))
 }
 
 export function loadMessages(): Record<string, Message[]> {
   try {
     return JSON.parse(localStorage.getItem(KEYS.messages) || '{}')
-  } catch {
+  } catch (e) {
+    console.error('Failed to load messages:', e)
     return {}
   }
 }
 
 export function saveMessages(messages: Record<string, Message[]>): void {
-  localStorage.setItem(KEYS.messages, JSON.stringify(messages))
+  safeSave(KEYS.messages, JSON.stringify(messages))
 }
 
 export function loadUnread(): Record<string, number> {
   try {
     return JSON.parse(localStorage.getItem(KEYS.unread) || '{}')
-  } catch {
+  } catch (e) {
+    console.error('Failed to load unread counts:', e)
     return {}
   }
 }
 
 export function saveUnread(unread: Record<string, number>): void {
-  localStorage.setItem(KEYS.unread, JSON.stringify(unread))
+  safeSave(KEYS.unread, JSON.stringify(unread))
 }
-
 export interface LogEntry {
   ts: string
   type: string

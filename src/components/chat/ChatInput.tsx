@@ -2,9 +2,10 @@ import { useState, useRef, useCallback } from 'react'
 import { ImagePlus, MapPin, Send } from 'lucide-react'
 import { useStore } from '../../store/useStore'
 import { useT } from '../../hooks/useT'
-import { publishDM, publishRoomMessage } from '../../lib/nostr'
+import { publishDM, publishRoomMessage, getRelayCount } from '../../lib/nostr'
 import { getW3WWords } from '../../lib/w3w'
 import { MAX_IMAGE_SIZE } from '../../lib/constants'
+import { enqueue, isOnline } from '../../lib/offlineQueue'
 import { EmojiPicker } from './EmojiPicker'
 
 export function ChatInput() {
@@ -24,11 +25,25 @@ export function ChatInput() {
     const el = textareaRef.current
     if (el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px' }
   }, [])
-
   const publishMessage = async (msgData: { type: string; content: string }) => {
     if (!activeChat || !identity) return
     const localMsg = { type: msgData.type as 'text' | 'image' | 'location', content: msgData.content, pubkey: identity.pubkey, ts: Date.now() }
     addMessage(activeChat.chatId, localMsg)
+
+    // If offline or no relays connected, queue for later
+    if (!isOnline() || getRelayCount() === 0) {
+      enqueue({
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        chatType: activeChat.type,
+        chatId: activeChat.chatId,
+        recipientOrRoomHash: activeChat.id,
+        msgData: activeChat.type === 'room' ? { ...msgData, name: identity.name } : msgData,
+        timestamp: Date.now(),
+      })
+      showStatus(t('input.queuedOffline'), 3000)
+      return
+    }
+
     try {
       if (activeChat.type === 'dm') {
         await publishDM(identity.privkey, identity.pubkey, activeChat.id, msgData)
@@ -37,7 +52,6 @@ export function ChatInput() {
       }
     } catch (e) { console.warn('Publish failed:', e) }
   }
-
   const handleSend = async () => {
     if (!text.trim()) return
     const content = text.trim()
@@ -66,8 +80,7 @@ export function ChatInput() {
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         hideStatus()
-        try {
-          const words = await getW3WWords(pos.coords.latitude, pos.coords.longitude)
+        try {          const words = await getW3WWords(pos.coords.latitude, pos.coords.longitude)
           await publishMessage({ type: 'location', content: JSON.stringify({ words, lat: pos.coords.latitude, lng: pos.coords.longitude }) })
         } catch { alert(t('input.w3wUnavailable')) }
       },
@@ -96,8 +109,7 @@ export function ChatInput() {
           placeholder={t('input.placeholder')}
           value={text}
           onChange={e => { setText(e.target.value); autoResize() }}
-          onKeyDown={handleKeyDown}
-        />
+          onKeyDown={handleKeyDown}        />
         <button className="emoji-btn" onClick={e => { e.stopPropagation(); setEmojiOpen(!emojiOpen) }}>
           😊
         </button>
