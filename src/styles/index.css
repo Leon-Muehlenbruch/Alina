@@ -849,6 +849,14 @@ input[type="text"]:focus { border-color: var(--accent); }
 }
 .nav-link:hover { color: var(--warm); }
 
+.lang-btn {
+  background: none; border: 1px solid transparent; color: var(--muted);
+  font-size: 0.75rem; font-weight: 500; padding: 0.2rem 0.5rem; border-radius: 4px;
+  cursor: pointer; font-family: var(--font-body); transition: all 0.2s;
+}
+.lang-btn:hover { color: var(--text); }
+.lang-btn.active { color: var(--warm); border-color: var(--warm); font-weight: 700; }
+
 .nav-cta {
   background: var(--warm);
   color: var(--sand);

@@ -256,7 +256,7 @@ export const useStore = create<AppState>((set, get) => ({
   setRelayCount: (n) => set({ relayCount: n }),
 
   // Language
-  lang: (localStorage.getItem('alina-lang') as Lang) || 'de',
+  lang: (localStorage.getItem('alina-lang') as Lang) || 'en',
   setLang: (lang) => { localStorage.setItem('alina-lang', lang); set({ lang }) },
 
   // Auto-translate

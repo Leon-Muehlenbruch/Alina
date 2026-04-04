@@ -1,9 +1,20 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useStore } from '../../store/useStore'
+import { useT } from '../../hooks/useT'
 import { SOURCE_PREVIEW } from './sourcePreview'
+import type { Lang } from '../../lib/i18n'
+
+const LANGS: { code: Lang; label: string }[] = [
+  { code: 'en', label: 'EN' },
+  { code: 'ru', label: 'RU' },
+]
 
 export function LandingPage() {
   const [copied, setCopied] = useState(false)
+  const lang = useStore(s => s.lang)
+  const setLang = useStore(s => s.setLang)
+  const t = useT()
 
   const copySource = () => {
     navigator.clipboard.writeText(SOURCE_PREVIEW).then(() => {
@@ -20,62 +31,63 @@ export function LandingPage() {
           <span className="nav-wordmark">alina</span>
         </Link>
         <div className="nav-right">
-          <a href="#howto" className="nav-link">Guide</a>
-          <a href="#source" className="nav-link">Source code</a>
-          <Link to="/app" className="nav-cta">Open app</Link>
+          <a href="#howto" className="nav-link">{t('landing.guide')}</a>
+          <a href="#source" className="nav-link">{t('landing.sourceCode')}</a>
+          <div style={{ display: 'flex', gap: '0.25rem' }}>
+            {LANGS.map(l => (
+              <button
+                key={l.code}
+                onClick={() => setLang(l.code)}
+                className={`lang-btn${lang === l.code ? ' active' : ''}`}
+              >
+                {l.label}
+              </button>
+            ))}
+          </div>
+          <Link to="/app" className="nav-cta">{t('landing.openApp')}</Link>
         </div>
       </nav>
-
       {/* HERO */}
       <section className="hero">
         <img src="/logo.svg" alt="Alina" className="hero-logo" />
         <h1 className="hero-title">
-          Private by design.<br /><em>Human by nature.</em>
+          {t('landing.heroTitle1')}<br /><em>{t('landing.heroTitle2')}</em>
         </h1>
-        <p className="hero-sub">No feed. No followers. Just the people you know.</p>
+        <p className="hero-sub">{t('landing.heroSub')}</p>
         <div className="hero-actions">
-          <Link to="/app" className="btn-primary">Open app</Link>
-          <a href="#source" className="btn-ghost">View source</a>
+          <Link to="/app" className="btn-primary">{t('landing.openApp')}</Link>
+          <a href="#source" className="btn-ghost">{t('landing.viewSource')}</a>
         </div>
         <div className="scroll-hint">
           <div className="scroll-line" />
-          <span>Mehr erfahren</span>
+          <span>{t('landing.scrollHint')}</span>
         </div>
       </section>
-
       {/* PROMISES */}
       <section className="promises" id="promises">
         <div className="container">
-          <div className="section-eyebrow">Three promises</div>
-          <h2 className="section-title">Built on <em>trust.</em></h2>
+          <div className="section-eyebrow">{t('landing.promisesEyebrow')}</div>
+          <h2 className="section-title">{t('landing.promisesTitle')} <em>{t('landing.promisesTitleEm')}</em></h2>
           <div className="promise-grid">
             <div className="promise">
               <div className="promise-num">01</div>
-              <div className="promise-title">No owner.</div>
-              <div className="promise-body">
-                MIT License. The code belongs to everyone. Anyone can read, change, and share it. No company behind it.
-              </div>
+              <div className="promise-title">{t('landing.promise1Title')}</div>
+              <div className="promise-body">{t('landing.promise1Body')}</div>
             </div>
             <div className="promise">
               <div className="promise-num">02</div>
-              <div className="promise-title">Cannot be switched off.</div>
-              <div className="promise-body">
-                Hundreds of independent Nostr relays worldwide. If one goes down, the others keep running. No state can shut them all down.
-              </div>
+              <div className="promise-title">{t('landing.promise2Title')}</div>
+              <div className="promise-body">{t('landing.promise2Body')}</div>
             </div>
             <div className="promise">
               <div className="promise-num">03</div>
-              <div className="promise-title">No bots.</div>
-              <div className="promise-body">
-                Contacts verified by one-time code outside the app. End-to-end encrypted. Only you and your contact can read messages.
-              </div>
+              <div className="promise-title">{t('landing.promise3Title')}</div>
+              <div className="promise-body">{t('landing.promise3Body')}</div>
             </div>
             <div className="promise">
               <div className="promise-num">04</div>
-              <div className="promise-title">Mega simple.</div>
-              <div className="promise-body">
-                One file. Open it in any browser. No install, no account, no manual. If you can send a text, you can use alina.
-              </div>
+              <div className="promise-title">{t('landing.promise4Title')}</div>
+              <div className="promise-body">{t('landing.promise4Body')}</div>
             </div>
           </div>
         </div>
@@ -84,31 +96,24 @@ export function LandingPage() {
       {/* FEATURES */}
       <section id="features">
         <div className="container">
-          <div className="section-eyebrow">Features</div>
+          <div className="section-eyebrow">{t('landing.featuresEyebrow')}</div>
           <h2 className="section-title">
-            Three things.<br /><em>Nothing more, nothing less.</em>
+            {t('landing.featuresTitle1')}<br /><em>{t('landing.featuresTitle2')}</em>
           </h2>
           <div className="features-grid">
             <div className="feature">
               <span className="feature-icon">💬</span>
-              <div className="feature-name">Text &amp; Emojis</div>
-              <div className="feature-desc">
-                Direktnachrichten und Gruppenräume bis 10 Personen. Verschlüsselt, dezentral.
-              </div>
+              <div className="feature-name">{t('landing.featureTextName')}</div>
+              <div className="feature-desc">{t('landing.featureTextDesc')}</div>
             </div>
             <div className="feature">
               <span className="feature-icon">🖼</span>
-              <div className="feature-name">Bilder senden</div>
-              <div className="feature-desc">
-                One image per message. No cloud upload, no third party. Directly in the conversation.
-              </div>
-            </div>
-            <div className="feature">
+              <div className="feature-name">{t('landing.featureImageName')}</div>
+              <div className="feature-desc">{t('landing.featureImageDesc')}</div>
+            </div>            <div className="feature">
               <span className="feature-icon">📍</span>
-              <div className="feature-name">Standort</div>
-              <div className="feature-desc">
-                GPS-Koordinaten mit Google Maps — ein Tipp und du siehst den Standort.
-              </div>
+              <div className="feature-name">{t('landing.featureLocationName')}</div>
+              <div className="feature-desc">{t('landing.featureLocationDesc')}</div>
             </div>
           </div>
         </div>
@@ -117,54 +122,42 @@ export function LandingPage() {
       {/* HOW TO */}
       <section className="howto" id="howto">
         <div className="container">
-          <div className="section-eyebrow">Guide</div>
+          <div className="section-eyebrow">{t('landing.howtoEyebrow')}</div>
           <h2 className="section-title">
-            Up and running <em>in two minutes.</em>
+            {t('landing.howtoTitle1')} <em>{t('landing.howtoTitle2')}</em>
           </h2>
           <div className="steps">
             <div className="step">
               <div className="step-num">1</div>
               <div className="step-body">
-                <div className="step-title">Open app</div>
-                <div className="step-desc">
-                  Tap "Open app" — done. No download, no app store, no account.
-                </div>
+                <div className="step-title">{t('landing.step1Title')}</div>
+                <div className="step-desc">{t('landing.step1Desc')}</div>
               </div>
-            </div>
-            <div className="step">
+            </div>            <div className="step">
               <div className="step-num">2</div>
               <div className="step-body">
-                <div className="step-title">Namen eingeben</div>
-                <div className="step-desc">
-                  On first launch enter your name. A key pair is generated automatically — locally, on your device.
-                </div>
+                <div className="step-title">{t('landing.step2Title')}</div>
+                <div className="step-desc">{t('landing.step2Desc')}</div>
               </div>
             </div>
             <div className="step">
               <div className="step-num">3</div>
               <div className="step-body">
-                <div className="step-title">Add a contact</div>
-                <div className="step-desc">
-                  Tap <code>+</code> — generate a one-time code and send it via SMS or Signal to your contact. Valid for 10 minutes.
-                </div>
+                <div className="step-title">{t('landing.step3Title')}</div>
+                <div className="step-desc">{t('landing.step3Desc')}</div>
               </div>
             </div>
             <div className="step">
               <div className="step-num">4</div>
               <div className="step-body">
-                <div className="step-title">Install on your homescreen</div>
-                <div className="step-desc">
-                  Your browser will ask: "Add to home screen?" — one tap and alina appears as an app icon.
-                </div>
+                <div className="step-title">{t('landing.step4Title')}</div>
+                <div className="step-desc">{t('landing.step4Desc')}</div>
               </div>
             </div>
             <div className="step">
               <div className="step-num">5</div>
-              <div className="step-body">
-                <div className="step-title">Write your private key down</div>
-                <div className="step-desc">
-                  Open Settings (⚙) and save your private key somewhere safe. Lose it and you lose your identity.
-                </div>
+              <div className="step-body">                <div className="step-title">{t('landing.step5Title')}</div>
+                <div className="step-desc">{t('landing.step5Desc')}</div>
               </div>
             </div>
           </div>
@@ -174,21 +167,20 @@ export function LandingPage() {
       {/* SOURCE */}
       <section id="source">
         <div className="container">
-          <div className="section-eyebrow">Source code</div>
-          <h2 className="section-title">Open to <em>everyone.</em></h2>
+          <div className="section-eyebrow">{t('landing.sourceEyebrow')}</div>
+          <h2 className="section-title">{t('landing.sourceTitle')} <em>{t('landing.sourceTitleEm')}</em></h2>
           <p style={{ fontSize: '0.85rem', color: 'var(--muted)', marginBottom: '2rem', lineHeight: 1.8, maxWidth: 520 }}>
-            Complete code — nothing hidden, nothing minified. React + TypeScript + Nostr. Read it, change it, share it.
+            {t('landing.sourceDesc')}
           </p>
           <div className="source-header">
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
               <span style={{ fontSize: '0.72rem', color: 'var(--muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                MIT License · Open to all
+                {t('landing.sourceLicense')}
               </span>
               <button className={`copy-btn${copied ? ' copied' : ''}`} onClick={copySource}>
-                {copied ? 'Copied!' : 'Copy'}
+                {copied ? t('landing.sourceCopied') : t('landing.sourceCopy')}
               </button>
-            </div>
-          </div>
+            </div>          </div>
           <div className="source-box">
             <div className="source-toolbar">
               <span className="source-filename">src/lib/nostr.ts</span>
@@ -203,25 +195,24 @@ export function LandingPage() {
       <section style={{ borderTop: '1px solid var(--rule)' }}>
         <div className="container">
           <div className="philosophy-inner">
-            <div className="section-eyebrow">Philosophy</div>
+            <div className="section-eyebrow">{t('landing.philEyebrow')}</div>
             <blockquote>
-              Das Netz gehört allen — oder es gehört niemandem.
+              {t('landing.philQuote')}
             </blockquote>
-            <p className="quote-caption">Why alina exists</p>
+            <p className="quote-caption">{t('landing.philCaption')}</p>
             <p style={{ fontSize: '0.85rem', color: 'var(--muted)', lineHeight: 1.9, marginTop: '1.8rem', paddingLeft: '2rem', maxWidth: 480 }}>
-              alina was built so people can stay in touch with the people they know — regardless of whether a government, a company, or an algorithm decides who is allowed to talk to whom. No server that can be switched off. No owner that can be bought. Just people talking to each other.
+              {t('landing.philBody')}
             </p>
           </div>
-        </div>
-      </section>
+        </div>      </section>
 
       {/* FOOTER */}
       <footer>
         <div className="footer-left">
           <img src="/logo.svg" alt="Alina" className="footer-logo" />
-          <span className="footer-text">alina · v2.0 · © 2025 Kay (__archon) Muehlenbruch</span>
+          <span className="footer-text">{t('landing.footerText')}</span>
         </div>
-        <span className="footer-mit">MIT License · Open source</span>
+        <span className="footer-mit">{t('landing.footerLicense')}</span>
       </footer>
     </div>
   )

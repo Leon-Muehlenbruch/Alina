@@ -4,10 +4,10 @@ function tr(lang: Lang, key: 'utils.yesterday' | 'utils.noMessages' | 'utils.ima
   return translations[lang][key] as string
 }
 
-export function formatTime(ts: number, lang: Lang = 'de'): string {
+export function formatTime(ts: number, lang: Lang = 'en'): string {
   const d = new Date(ts)
   const now = new Date()
-  const locale = lang === 'ru' ? 'ru' : lang === 'en' ? 'en-GB' : 'de'
+  const locale = lang === 'ru' ? 'ru' : 'en-GB'
   const sameDay = d.toDateString() === now.toDateString()
   const time = d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
 
@@ -25,7 +25,7 @@ export function formatTime(ts: number, lang: Lang = 'de'): string {
   return `${date}, ${time}`
 }
 
-export function lastMsgPreview(messages: { type: string; content: string }[], lang: Lang = 'de'): string {
+export function lastMsgPreview(messages: { type: string; content: string }[], lang: Lang = 'en'): string {
   if (!messages.length) return tr(lang, 'utils.noMessages')
   const last = messages[messages.length - 1]
   if (last.type === 'image') return tr(lang, 'utils.image')

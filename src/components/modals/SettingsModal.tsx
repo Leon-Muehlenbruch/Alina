@@ -6,7 +6,6 @@ import { loadLogs, clearLogs as clearStoredLogs } from '../../lib/storage'
 import type { Lang } from '../../lib/i18n'
 
 const LANGS: { code: Lang; label: string }[] = [
-  { code: 'de', label: 'DE' },
   { code: 'en', label: 'EN' },
   { code: 'ru', label: 'RU' },
 ]
