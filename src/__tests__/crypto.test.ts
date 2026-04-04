@@ -27,6 +27,7 @@ describe('crypto', () => {
       expect(kp1.pubkey).not.toBe(kp2.pubkey)
     })
   })
+
   describe('pubkeyFromPrivkey', () => {
     it('should derive the correct pubkey', () => {
       const { privkey, pubkey } = createKeyPair()
@@ -56,6 +57,7 @@ describe('crypto', () => {
       expect(decodeNpub(npub)).toBe(pubkey)
     })
   })
+
   describe('DM encryption/decryption', () => {
     it('should encrypt and decrypt a message between two keypairs', async () => {
       const alice = createKeyPair()
@@ -83,7 +85,8 @@ describe('crypto', () => {
 
   describe('hashing', () => {
     it('should produce deterministic room hashes', async () => {
-      const hash1 = await hashRoomName('TestRoom')      const hash2 = await hashRoomName('testroom') // case-insensitive
+      const hash1 = await hashRoomName('TestRoom')
+      const hash2 = await hashRoomName('testroom') // case-insensitive
       expect(hash1).toBe(hash2)
       expect(hash1).toMatch(/^[0-9a-f]{64}$/)
     })

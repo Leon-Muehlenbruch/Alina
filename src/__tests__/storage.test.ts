@@ -26,6 +26,7 @@ describe('storage', () => {
     it('should return null when no identity saved', () => {
       expect(loadIdentity()).toBeNull()
     })
+
     it('should save and load identity', () => {
       const identity: Identity = {
         privkey: new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32]),
@@ -54,6 +55,7 @@ describe('storage', () => {
     it('should return empty object when no contacts saved', () => {
       expect(loadContacts()).toEqual({})
     })
+
     it('should save and load contacts', () => {
       const contacts: Record<string, Contact> = {
         abc: { pubkey: 'abc', name: 'Alice' },
@@ -81,7 +83,8 @@ describe('storage', () => {
           { type: 'text', content: 'hello', pubkey: 'abc', ts: 1000 },
         ],
       }
-      saveMessages(messages)      expect(loadMessages()).toEqual(messages)
+      saveMessages(messages)
+      expect(loadMessages()).toEqual(messages)
     })
   })
 
@@ -110,7 +113,8 @@ describe('storage', () => {
       expect(logs.length).toBe(100)
     })
 
-    it('should clear logs', () => {      saveLog('test', 'hello')
+    it('should clear logs', () => {
+      saveLog('test', 'hello')
       clearLogs()
       expect(loadLogs()).toEqual([])
     })

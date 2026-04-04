@@ -27,6 +27,7 @@ describe('useStore', () => {
       expect(identity!.pubkey).toMatch(/^[0-9a-f]{64}$/)
       expect(identity!.privkey).toBeInstanceOf(Uint8Array)
     })
+
     it('should update name', () => {
       useStore.getState().createIdentity('Alice')
       useStore.getState().updateName('Bob')
@@ -55,6 +56,7 @@ describe('useStore', () => {
       useStore.getState().renameContact('pubkey123', 'Alina')
       expect(useStore.getState().contacts['pubkey123'].name).toBe('Alina')
     })
+
     it('should delete a contact and its messages', () => {
       useStore.getState().addContact('pubkey123', 'Alice')
       useStore.getState().addMessage('dm:pubkey123', { type: 'text', content: 'hi', pubkey: 'pubkey123', ts: 1000 })
@@ -83,6 +85,7 @@ describe('useStore', () => {
       expect(added).toBe(false)
       expect(useStore.getState().messages['dm:abc']).toHaveLength(1)
     })
+
     it('should reject duplicate messages by eventId', () => {
       useStore.getState().addMessage('dm:abc', { type: 'text', content: 'hello', pubkey: 'abc', ts: 1000, eventId: 'evt-1' })
       const added = useStore.getState().addMessage('dm:abc', { type: 'text', content: 'hello', pubkey: 'abc', ts: 2000, eventId: 'evt-1' })
@@ -92,7 +95,7 @@ describe('useStore', () => {
 
     it('should cap messages at MAX_MESSAGES_PER_CHAT', () => {
       for (let i = 0; i < 210; i++) {
-        useStore.getState().addMessage('dm:abc', { type: 'text', content: `msg ${i}`, pubkey: 'abc', ts: i })
+        useStore.getState().addMessage('dm:abc', { type: 'text', content: 'msg ' + i, pubkey: 'abc', ts: i })
       }
       expect(useStore.getState().messages['dm:abc'].length).toBeLessThanOrEqual(200)
     })
@@ -110,7 +113,8 @@ describe('useStore', () => {
 
   describe('rooms', () => {
     it('should add a room', () => {
-      useStore.getState().addRoom('hash123', 'General')      expect(useStore.getState().rooms['hash123']).toEqual({ name: 'General', hash: 'hash123' })
+      useStore.getState().addRoom('hash123', 'General')
+      expect(useStore.getState().rooms['hash123']).toEqual({ name: 'General', hash: 'hash123' })
     })
   })
 

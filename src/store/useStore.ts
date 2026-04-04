@@ -26,7 +26,8 @@ export interface Message {
   pubkey: string
   name?: string
   ts: number
-  eventId?: string  translated?: string
+  eventId?: string
+  translated?: string
   detectedLang?: string
 }
 
@@ -55,6 +56,7 @@ interface AppState {
   // Rooms
   rooms: Record<string, Room>
   addRoom: (hash: string, name: string) => void
+
   // Messages
   messages: Record<string, Message[]>
   addMessage: (chatId: string, msg: Message) => boolean // returns false if duplicate
@@ -83,7 +85,8 @@ interface AppState {
 
   // UI
   openModal: string | null
-  setOpenModal: (id: string | null) => void  statusMessage: string | null
+  setOpenModal: (id: string | null) => void
+  statusMessage: string | null
   statusTimeout: ReturnType<typeof setTimeout> | null
   showStatus: (msg: string, duration?: number) => void
   hideStatus: () => void
@@ -111,7 +114,8 @@ export const useStore = create<AppState>((set, get) => ({
     const rooms = storage.loadRooms()
     const messages = storage.loadMessages()
     const unread = storage.loadUnread()
-    storage.saveIdentity(identity)    set({ identity, contacts, rooms, messages, unread })
+    storage.saveIdentity(identity)
+    set({ identity, contacts, rooms, messages, unread })
   },
 
   updateName: (name) => {
@@ -140,7 +144,8 @@ export const useStore = create<AppState>((set, get) => ({
   addContact: (pubkey, name) => {
     const { contacts } = get()
     let hexPubkey = pubkey
-    if (pubkey.startsWith('npub')) {      hexPubkey = decodeNpub(pubkey)
+    if (pubkey.startsWith('npub')) {
+      hexPubkey = decodeNpub(pubkey)
     }
     const updated = { ...contacts, [hexPubkey]: { pubkey: hexPubkey, name } }
     storage.saveContacts(updated)
@@ -168,6 +173,7 @@ export const useStore = create<AppState>((set, get) => ({
     const updatedContacts = { ...contacts }
     delete updatedContacts[pubkey]
     storage.saveContacts(updatedContacts)
+
     const chatId = 'dm:' + pubkey
     const updatedMessages = { ...messages }
     delete updatedMessages[chatId]
@@ -197,6 +203,7 @@ export const useStore = create<AppState>((set, get) => ({
 
   // Messages
   messages: storage.loadMessages(),
+
   addMessage: (chatId, msg) => {
     const { messages } = get()
     const existing = messages[chatId] || []
@@ -225,6 +232,7 @@ export const useStore = create<AppState>((set, get) => ({
       get().clearUnread(chat.chatId)
     }
   },
+
   // Unread
   unread: storage.loadUnread(),
 
@@ -253,7 +261,8 @@ export const useStore = create<AppState>((set, get) => ({
 
   // Auto-translate
   autoTranslate: localStorage.getItem('alina-autotranslate') === 'true',
-  setAutoTranslate: (v) => { localStorage.setItem('alina-autotranslate', String(v)); set({ autoTranslate: v }) },  setMessageTranslation: (chatId, ts, pubkey, translated, detectedLang) => {
+  setAutoTranslate: (v) => { localStorage.setItem('alina-autotranslate', String(v)); set({ autoTranslate: v }) },
+  setMessageTranslation: (chatId, ts, pubkey, translated, detectedLang) => {
     const { messages } = get()
     const msgs = messages[chatId]
     if (!msgs) return
@@ -281,7 +290,8 @@ export const useStore = create<AppState>((set, get) => ({
         set({ statusMessage: null, statusTimeout: null })
       }, duration)
       set({ statusMessage: msg, statusTimeout: timeout })
-    } else {      set({ statusMessage: msg, statusTimeout: null })
+    } else {
+      set({ statusMessage: msg, statusTimeout: null })
     }
   },
 
