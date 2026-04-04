@@ -97,22 +97,34 @@ export const MessageBubble = memo(function MessageBubble({ msg, isMine, isRoom, 
 function LocationBubble({ content, isMine, openMapLabel }: { content: string; isMine: boolean; openMapLabel: string }) {
   try {
     const data = JSON.parse(content)
-    const isCoordFallback = data.words && /^-?\d+\.\d+,-?\d+\.\d+$/.test(data.words)
-    const mapUrl = isCoordFallback
-      ? `https://www.google.com/maps?q=${data.lat},${data.lng}`
-      : `https://what3words.com/${data.words}`
+    const lat = data.lat
+    const lng = data.lng
+    if (typeof lat !== 'number' || typeof lng !== 'number') throw new Error('invalid')
+    const mapUrl = `https://www.google.com/maps?q=${lat},${lng}`
+    const previewUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=15&size=280x160&markers=color:red%7C${lat},${lng}&scale=2&format=jpg`
     return (
-      <div className="msg-bubble location-msg">
-        <MapPin size={18} style={{ flexShrink: 0 }} />
-        <div>
-          <div className="location-words">{isCoordFallback ? `📍 ${data.lat.toFixed(4)}, ${data.lng.toFixed(4)}` : data.words}</div>
-          <a
-            className={`location-link${isMine ? ' mine' : ''}`}
-            href={mapUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          >            {openMapLabel}
-          </a>
+      <div className="msg-bubble location-msg" style={{ flexDirection: 'column', gap: '0.4rem', padding: 0, overflow: 'hidden' }}>
+        <a href={mapUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'block' }}>
+          <img
+            src={previewUrl}
+            alt={`📍 ${lat.toFixed(4)}, ${lng.toFixed(4)}`}
+            style={{ width: '100%', maxWidth: 280, display: 'block', borderRadius: '10px 10px 0 0' }}
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+          />
+        </a>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.4rem 0.7rem 0.5rem' }}>
+          <MapPin size={16} style={{ flexShrink: 0 }} />
+          <div>
+            <div className="location-words">{`${lat.toFixed(4)}, ${lng.toFixed(4)}`}</div>
+            <a
+              className={`location-link${isMine ? ' mine' : ''}`}
+              href={mapUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {openMapLabel}
+            </a>
+          </div>
         </div>
       </div>
     )

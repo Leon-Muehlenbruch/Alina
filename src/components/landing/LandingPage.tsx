@@ -107,7 +107,7 @@ export function LandingPage() {
               <span className="feature-icon">📍</span>
               <div className="feature-name">Standort</div>
               <div className="feature-desc">
-                what3words — drei Wörter, präzise auf 3m². Egal wo auf der Welt.
+                GPS-Koordinaten mit Google Maps — ein Tipp und du siehst den Standort.
               </div>
             </div>
           </div>

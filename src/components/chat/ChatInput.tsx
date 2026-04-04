@@ -3,7 +3,6 @@ import { ImagePlus, MapPin, Send } from 'lucide-react'
 import { useStore } from '../../store/useStore'
 import { useT } from '../../hooks/useT'
 import { publishDM, publishRoomMessage, getRelayCount } from '../../lib/nostr'
-import { getW3WWords } from '../../lib/w3w'
 import { MAX_IMAGE_SIZE } from '../../lib/constants'
 import { enqueue, isOnline } from '../../lib/offlineQueue'
 import { EmojiPicker } from './EmojiPicker'
@@ -80,9 +79,9 @@ export function ChatInput() {
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         hideStatus()
-        try {          const words = await getW3WWords(pos.coords.latitude, pos.coords.longitude)
-          await publishMessage({ type: 'location', content: JSON.stringify({ words, lat: pos.coords.latitude, lng: pos.coords.longitude }) })
-        } catch { alert(t('input.w3wUnavailable')) }
+        const lat = pos.coords.latitude
+        const lng = pos.coords.longitude
+        await publishMessage({ type: 'location', content: JSON.stringify({ lat, lng }) })
       },
       () => { hideStatus(); alert(t('input.locationDenied')) },
     )

@@ -8,8 +8,6 @@ export const RELAYS = [
   'wss://relay.nostr.bg',
 ] as const
 
-export const W3W_KEY = 'DEMO' // Replace with real key from what3words.com
-
 export const EMOJIS = [
   '😊','😂','❤️','👍','🙏','😍','🎉','😢','😎','🔥',
   '💪','✨','🤔','👋','😅','🌹','💙','🫂','😄','🥰',
