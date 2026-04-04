@@ -3,9 +3,9 @@ import { ImagePlus, MapPin, Send } from 'lucide-react'
 import { useStore } from '../../store/useStore'
 import { useT } from '../../hooks/useT'
 import { publishDM, publishRoomMessage, getRelayCount } from '../../lib/nostr'
-import { MAX_IMAGE_SIZE } from '../../lib/constants'
 import { enqueue, isOnline } from '../../lib/offlineQueue'
 import { EmojiPicker } from './EmojiPicker'
+import { ImagePreview } from './ImagePreview'
 
 export function ChatInput() {
   const activeChat = useStore(s => s.activeChat)
@@ -17,6 +17,7 @@ export function ChatInput() {
 
   const [text, setText] = useState('')
   const [emojiOpen, setEmojiOpen] = useState(false)
+  const [imageFile, setImageFile] = useState<File | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -66,11 +67,13 @@ export function ChatInput() {
   const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    if (file.size > MAX_IMAGE_SIZE) { alert(t('input.imageTooLarge')); return }
-    const reader = new FileReader()
-    reader.onload = async (ev) => { await publishMessage({ type: 'image', content: ev.target?.result as string }) }
-    reader.readAsDataURL(file)
+    setImageFile(file)
     e.target.value = ''
+  }
+
+  const handleImageSend = async (dataUrl: string) => {
+    setImageFile(null)
+    await publishMessage({ type: 'image', content: dataUrl })
   }
 
   const handleLocation = () => {
@@ -91,6 +94,13 @@ export function ChatInput() {
 
   return (
     <div className="chat-input-bar" onClick={() => setEmojiOpen(false)}>
+      {imageFile && (
+        <ImagePreview
+          file={imageFile}
+          onSend={handleImageSend}
+          onCancel={() => setImageFile(null)}
+        />
+      )}
       <EmojiPicker open={emojiOpen} onSelect={emoji => { setText(prev => prev + emoji); textareaRef.current?.focus() }} onClose={() => setEmojiOpen(false)} />
 
       <button className="attach-btn" onClick={() => fileInputRef.current?.click()} title={t('input.sendImage')}>
