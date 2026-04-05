@@ -10,6 +10,7 @@ import { AddRoomModal } from './components/modals/AddRoomModal'
 import { SettingsModal } from './components/modals/SettingsModal'
 import { StatusBar } from './components/ui/StatusBar'
 import { AppSplash } from './components/ui/AppSplash'
+import { PwaBanner } from './components/ui/PwaBanner'
 
 export function App() {
   const identity = useStore(s => s.identity)
@@ -46,6 +47,7 @@ export function App() {
       {openModal === 'settings' && <SettingsModal />}
 
       <StatusBar />
+      <PwaBanner />
     </div>
   )
 }

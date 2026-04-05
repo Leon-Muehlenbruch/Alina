@@ -422,6 +422,8 @@ input[type="text"]:focus { border-color: var(--accent); }
   flex-direction: column;
   overflow: hidden;
   position: relative;
+  min-width: 0;
+  width: 100%;
 }
 
 .chat-empty-state {
@@ -459,11 +461,13 @@ input[type="text"]:focus { border-color: var(--accent); }
 .chat-messages {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 1.2rem 1.4rem;
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
   scroll-behavior: smooth;
+  width: 100%;
 }
 
 /* Messages */
@@ -772,6 +776,57 @@ input[type="text"]:focus { border-color: var(--accent); }
   color: #c8956a;
   text-align: center;
   z-index: 300;
+}
+
+/* PWA Install Banner */
+.pwa-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 0.8rem 1rem;
+  padding-bottom: calc(0.8rem + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  z-index: 200;
+  animation: slideUp 0.3s ease-out;
+}
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.pwa-banner-text {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.pwa-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+.pwa-install-btn {
+  background: var(--accent) !important;
+  color: #1a1410 !important;
+  font-size: 0.8rem !important;
+  padding: 0.4rem 0.8rem !important;
+  border-radius: 8px !important;
+  font-weight: 500 !important;
+}
+.pwa-dismiss-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0.3rem;
 }
 
 /* Scrollbar */

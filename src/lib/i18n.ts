@@ -150,6 +150,9 @@ export const translations = {
     'sidebar.newChat': 'New chat',
     'sidebar.group': 'Group',
     'sidebar.install': 'Install app',
+    'pwa.banner': 'Add alina to your home screen for vibration, notifications and full-screen mode.',
+    'pwa.install': 'Install',
+    'pwa.dismiss': 'Later',
     // Utils
     'utils.yesterday': 'Yesterday',
     'utils.noMessages': 'No messages yet',
@@ -376,6 +379,9 @@ export const translations = {
     'sidebar.newChat': 'Новый чат',
     'sidebar.group': 'Группа',
     'sidebar.install': 'Установить приложение',
+    'pwa.banner': 'Добавь alina на главный экран для вибрации, уведомлений и полноэкранного режима.',
+    'pwa.install': 'Установить',
+    'pwa.dismiss': 'Позже',
     // Utils
     'utils.yesterday': 'Вчера',
     'utils.noMessages': 'Сообщений пока нет',
