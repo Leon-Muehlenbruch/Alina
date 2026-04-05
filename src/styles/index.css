@@ -985,13 +985,37 @@ input[type="text"]:focus { border-color: var(--accent); }
   padding: 1.4rem 4rem;
   font-size: 1.1rem;
   letter-spacing: 0.14em;
-  animation: ctaPulse 2.5s ease-in-out infinite;
+  position: relative;
+  animation: ctaBurst 3s ease-in-out infinite;
   box-shadow: 0 6px 30px rgba(179, 132, 99, 0.35);
 }
-.hero-cta-pulse:hover { animation: none; }
-@keyframes ctaPulse {
-  0%, 100% { box-shadow: 0 6px 30px rgba(179, 132, 99, 0.35); transform: scale(1); }
-  50% { box-shadow: 0 8px 40px rgba(179, 132, 99, 0.55); transform: scale(1.04); }
+.hero-cta-pulse::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 16px;
+  border: 2.5px solid var(--warm);
+  opacity: 0;
+  animation: ctaOutline 3s ease-in-out infinite;
+  pointer-events: none;
+}
+.hero-cta-pulse:hover,
+.hero-cta-pulse:hover::before { animation: none; }
+/* Outline shrinks in, then button bursts */
+@keyframes ctaOutline {
+  0%   { inset: 20px; opacity: 0; }
+  10%  { opacity: 0.8; }
+  60%  { inset: -4px; opacity: 1; }
+  70%  { inset: -4px; opacity: 0.6; }
+  75%  { opacity: 0; }
+  100% { opacity: 0; }
+}
+@keyframes ctaBurst {
+  0%, 60%  { transform: scale(1); box-shadow: 0 6px 30px rgba(179, 132, 99, 0.35); }
+  68%      { transform: scale(1.08); box-shadow: 0 10px 50px rgba(179, 132, 99, 0.6); }
+  76%      { transform: scale(0.97); box-shadow: 0 4px 20px rgba(179, 132, 99, 0.3); }
+  82%      { transform: scale(1.03); box-shadow: 0 6px 30px rgba(179, 132, 99, 0.4); }
+  90%, 100% { transform: scale(1); box-shadow: 0 6px 30px rgba(179, 132, 99, 0.35); }
 }
 
 .btn-ghost {
