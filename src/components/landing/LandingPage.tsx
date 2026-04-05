@@ -55,8 +55,7 @@ export function LandingPage() {
         </h1>
         <p className="hero-sub">{t('landing.heroSub')}</p>
         <div className="hero-actions">
-          <Link to="/app" className="btn-primary">{t('landing.openApp')}</Link>
-          <a href="#source" className="btn-ghost">{t('landing.viewSource')}</a>
+          <Link to="/app" className="btn-primary hero-cta-pulse">{t('landing.openApp')}</Link>
         </div>
         <div className="scroll-hint">
           <div className="scroll-line" />

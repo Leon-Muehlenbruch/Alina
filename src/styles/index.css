@@ -981,6 +981,19 @@ input[type="text"]:focus { border-color: var(--accent); }
 }
 .btn-primary:hover { background: var(--warm-dark); transform: translateY(-2px); }
 
+.hero-cta-pulse {
+  padding: 1.4rem 4rem;
+  font-size: 1.1rem;
+  letter-spacing: 0.14em;
+  animation: ctaPulse 2.5s ease-in-out infinite;
+  box-shadow: 0 6px 30px rgba(179, 132, 99, 0.35);
+}
+.hero-cta-pulse:hover { animation: none; }
+@keyframes ctaPulse {
+  0%, 100% { box-shadow: 0 6px 30px rgba(179, 132, 99, 0.35); transform: scale(1); }
+  50% { box-shadow: 0 8px 40px rgba(179, 132, 99, 0.55); transform: scale(1.04); }
+}
+
 .btn-ghost {
   color: var(--muted);
   text-decoration: none;
