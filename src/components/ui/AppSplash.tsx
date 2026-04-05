@@ -44,7 +44,7 @@ export function AppSplash({ onDone }: { onDone: () => void }) {
           bottom: 0.18em;
           width: 1em;
           height: 1em;
-          background-color: #B38463;
+          background-color: #c8a97e;
           border-radius: 15%;
           animation: rollingRock 2.5s cubic-bezier(.79, 0, .47, .97) infinite;
         }
