@@ -697,6 +697,8 @@ input[type="text"]:focus { border-color: var(--accent); }
   padding: 2rem;
   width: 100%;
   max-width: 420px;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 1.2rem;
