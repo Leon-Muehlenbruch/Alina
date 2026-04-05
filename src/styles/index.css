@@ -285,7 +285,8 @@ input[type="text"]:focus { border-color: var(--accent); }
   cursor: pointer;
   transition: background 0.12s;
 }
-.chat-item:hover { background: var(--surface2); }
+@media (hover: hover) { .chat-item:hover { background: var(--surface2); } }
+.chat-item:active { background: var(--surface2); }
 .chat-item.active { background: var(--surface2); }
 
 .chat-item-menu-btn {
@@ -299,7 +300,7 @@ input[type="text"]:focus { border-color: var(--accent); }
   opacity: 0;
   transition: opacity 0.15s;
 }
-.chat-item:hover .chat-item-menu-btn { opacity: 1; }
+@media (hover: hover) { .chat-item:hover .chat-item-menu-btn { opacity: 1; } }
 
 .chat-item-menu {
   position: absolute;
@@ -325,7 +326,7 @@ input[type="text"]:focus { border-color: var(--accent); }
   font-size: 0.85rem;
   font-family: var(--font-body);
 }
-.chat-item-menu button:hover { background: var(--border); }
+@media (hover: hover) { .chat-item-menu button:hover { background: var(--border); } }
 
 .chat-section-label {
   font-size: 0.7rem;
@@ -355,7 +356,8 @@ input[type="text"]:focus { border-color: var(--accent); }
   transition: background 0.12s;
   border-radius: 0;
 }
-.contact-item:hover, .room-item:hover { background: var(--surface2); }
+@media (hover: hover) { .contact-item:hover, .room-item:hover { background: var(--surface2); } }
+.contact-item:active, .room-item:active { background: var(--surface2); }
 .contact-item.active, .room-item.active { background: var(--surface2); }
 
 .avatar {
