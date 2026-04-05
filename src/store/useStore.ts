@@ -343,6 +343,6 @@ export const useStore = create<AppState>((set, get) => ({
     set({ statusMessage: null, statusTimeout: null })
   },
 
-  sidebarOpen: false,
+  sidebarOpen: true,
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
 }))

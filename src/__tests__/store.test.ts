@@ -13,7 +13,7 @@ beforeEach(() => {
     activeChat: null,
     relayCount: 0,
     openModal: null,
-    sidebarOpen: false,
+    sidebarOpen: true,
   })
 })
 

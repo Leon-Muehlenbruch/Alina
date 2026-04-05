@@ -38,6 +38,7 @@ export const translations = {
     // Chat area
     'chat.tagline': 'Secure. Decentralised. Yours.',
     'chat.noAccount': 'No ads. No server. No account needed.',
+    'chat.openSidebar': 'Open chats',
     'chat.inviteSomeone': 'Invite someone',
     'chat.createGroup': 'Create group',
     // Chat header
@@ -249,6 +250,7 @@ export const translations = {
     // Chat area
     'chat.tagline': 'Безопасно. Децентрализованно. Твоё.',
     'chat.noAccount': 'Без рекламы. Без сервера. Без аккаунта.',
+    'chat.openSidebar': 'Открыть чаты',
     'chat.inviteSomeone': 'Пригласить',
     'chat.createGroup': 'Создать группу',    // Chat header
     'header.pubkeyCopied': 'Публичный ключ скопирован!',

@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { MessageCirclePlus, Users } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { MessageCirclePlus, Users, Menu } from 'lucide-react'
 import { useStore } from '../../store/useStore'
 import { useT } from '../../hooks/useT'
 import { ChatHeader } from './ChatHeader'
@@ -10,13 +10,27 @@ import { Lightbox } from '../ui/Lightbox'
 export function ChatArea() {
   const activeChat = useStore(s => s.activeChat)
   const setOpenModal = useStore(s => s.setOpenModal)
+  const setSidebarOpen = useStore(s => s.setSidebarOpen)
   const t = useT()
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null)
+
+  // Auto-open sidebar when no chat is active (important for mobile)
+  useEffect(() => {
+    if (!activeChat) setSidebarOpen(true)
+  }, [activeChat, setSidebarOpen])
 
   if (!activeChat) {
     return (
       <div className="chat-area">
         <div className="chat-empty-state">
+          {/* Mobile: prominent button to open sidebar */}
+          <button
+            className="mobile-sidebar-btn"
+            onClick={() => setSidebarOpen(true)}
+          >
+            <Menu size={22} />
+            <span>{t('chat.openSidebar')}</span>
+          </button>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: '3.5rem', color: 'var(--border)', fontStyle: 'italic', marginBottom: '1rem' }}>
             Alina
           </div>
