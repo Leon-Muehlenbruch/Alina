@@ -509,6 +509,8 @@ input[type="text"]:focus { border-color: var(--accent); }
   padding: 0.3rem;
   background: transparent;
   border: 1px solid var(--border);
+  overflow: hidden;
+  max-width: 280px;
 }
 .msg-row.mine .msg-bubble.image-msg { border-color: var(--accent); }
 
