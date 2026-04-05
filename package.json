@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@khmyznikov/pwa-install": "^0.6.3",
-    "@rollup/rollup-linux-arm64-gnu": "^4.60.1",
     "lucide-react": "^1.7.0",
     "nostr-tools": "^2.10.4",
     "react": "^19.0.0",
