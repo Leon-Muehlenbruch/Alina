@@ -1,4 +1,12 @@
 <svg viewBox="35 70 475 475" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .arc1 { animation: pulse 2.4s ease-in-out infinite; }
+    .arc2 { animation: pulse 2.4s ease-in-out 0.3s infinite; }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 1; }
+    }
+  </style>
   <!-- Speech bubble -->
   <path d="M230 90
            C130 90, 55 165, 55 260
@@ -17,8 +25,8 @@
   <circle cx="185" cy="265" r="18" fill="#B38463" />
   <circle cx="285" cy="265" r="18" fill="#B38463" />
   <!-- Signal arcs -->
-  <path d="M420 140 A55 55 0 0 1 450 195"
+  <path class="arc1" d="M420 140 A55 55 0 0 1 450 195"
         fill="none" stroke="#B38463" stroke-width="12" stroke-linecap="round" />
-  <path d="M440 100 A95 95 0 0 1 490 180"
+  <path class="arc2" d="M440 100 A95 95 0 0 1 490 180"
         fill="none" stroke="#B38463" stroke-width="12" stroke-linecap="round" />
 </svg>
