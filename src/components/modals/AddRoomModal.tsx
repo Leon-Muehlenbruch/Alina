@@ -3,13 +3,14 @@ import { Copy, Check, Users } from 'lucide-react'
 import { useStore } from '../../store/useStore'
 import { useT } from '../../hooks/useT'
 import { hashRoomName } from '../../lib/crypto'
-import { subscribeToRoom } from '../../lib/nostr'
+import { subscribeToRoom, publishRoomPresence } from '../../lib/nostr'
 
 type View = 'create' | 'share'
 
 export function AddRoomModal() {
   const setOpenModal = useStore(s => s.setOpenModal)
   const addRoom = useStore(s => s.addRoom)
+  const identity = useStore(s => s.identity)
   const setActiveChat = useStore(s => s.setActiveChat)
   const showStatus = useStore(s => s.showStatus)
   const t = useT()
@@ -26,6 +27,10 @@ export function AddRoomModal() {
     const hash = await hashRoomName(name)
     addRoom(hash, name)
     subscribeToRoom(hash)
+    // Announce presence so other members discover us
+    if (identity) {
+      publishRoomPresence(identity.privkey, identity.pubkey, hash, identity.name)
+    }
     setActiveChat({ type: 'room', id: hash, name, chatId: 'room:' + hash })
     setView('share')
   }

@@ -1,5 +1,5 @@
-import { RELAYS, INVITE_KIND, INVITE_CODE_DURATION } from './constants'
-import { createSignedEvent, isValidEvent, encryptDM, decryptDM, hashInviteCode } from './crypto'
+import { RELAYS, INVITE_KIND, INVITE_CODE_DURATION, GIFT_WRAP_KIND, CHAT_MESSAGE_KIND, ROOM_PRESENCE_KIND } from './constants'
+import { createSignedEvent, isValidEvent, encryptDM, decryptDM, hashInviteCode, createSeal, createGiftWrap, unwrapGiftWrap, unsealRumor } from './crypto'
 import { saveLog } from './storage'
 import type { Message } from '../store/useStore'
 
@@ -22,7 +22,8 @@ let getStateCallback: (() => {
   privkey: Uint8Array | null
   pubkey: string | null
   contacts: Record<string, { pubkey: string; name: string }>
-  rooms: Record<string, { name: string; hash: string }>
+  rooms: Record<string, { name: string; hash: string; members: string[] }>
+  addRoomMember: (hash: string, pubkey: string) => void
 }) | null = null
 
 export function setOnMessage(cb: typeof onMessageCallback): void {
@@ -56,14 +57,18 @@ function subscribeAll(ws: WebSocket): void {
   const state = getStateCallback?.()
   if (!state?.pubkey) return
 
-  // Subscribe to DMs directed to me
+  // Subscribe to DMs directed to me (NIP-04)
   const dmSub = JSON.stringify(['REQ', 'dm-sub', { kinds: [4], '#p': [state.pubkey], limit: 100 }])
   ws.send(dmSub)
 
-  // Subscribe to room messages for all joined rooms
+  // Subscribe to Gift Wraps directed to me (NIP-17 encrypted room messages)
+  const gwSub = JSON.stringify(['REQ', 'gw-sub', { kinds: [GIFT_WRAP_KIND], '#p': [state.pubkey], limit: 200 }])
+  ws.send(gwSub)
+
+  // Subscribe to room presence/join events (Kind 42 - non-sensitive, just pubkey announcements)
   const roomHashes = Object.values(state.rooms).map(r => r.hash)
   if (roomHashes.length) {
-    const roomSub = JSON.stringify(['REQ', 'room-sub', { kinds: [42], '#e': roomHashes, limit: 200 }])
+    const roomSub = JSON.stringify(['REQ', 'room-sub', { kinds: [ROOM_PRESENCE_KIND], '#e': roomHashes, limit: 200 }])
     ws.send(roomSub)
   }
 }
@@ -122,7 +127,8 @@ export function publishToRelays(event: object): void {
 export function subscribeToRoom(roomHash: string): void {
   relays.forEach(r => {
     try {
-      const sub = JSON.stringify(['REQ', 'room-' + roomHash.slice(0, 8), { kinds: [42], '#e': [roomHash], limit: 100 }])
+      // Subscribe to presence events for this room
+      const sub = JSON.stringify(['REQ', 'room-' + roomHash.slice(0, 8), { kinds: [ROOM_PRESENCE_KIND], '#e': [roomHash], limit: 100 }])
       r.ws.send(sub)
     } catch (e) {
       saveLog('relay-error', 'Failed to subscribe to room on ' + r.url + ': ' + String(e))
@@ -160,12 +166,18 @@ async function handleRelayMessage(raw: string): Promise<void> {
         return
       }
 
+      if (event.kind === GIFT_WRAP_KIND) {
+        // Gift wraps use ephemeral keys — don't verify event signature the normal way
+        await handleGiftWrap(event)
+        return
+      }
+
       if (!isValidEvent(event)) return
 
       if (event.kind === 4) {
         await handleDM(event)
-      } else if (event.kind === 42) {
-        handleRoomMsg(event)
+      } else if (event.kind === ROOM_PRESENCE_KIND) {
+        handleRoomPresence(event)
       }
     }
   } catch (e) {
@@ -204,40 +216,74 @@ async function handleDM(event: { id?: string; pubkey: string; content: string; c
   }
 }
 
-function handleRoomMsg(event: { id?: string; pubkey: string; content: string; created_at: number; tags: string[][] }): void {
+/** Handle Kind 42 presence/join events — learn room members (no sensitive data) */
+function handleRoomPresence(event: { id?: string; pubkey: string; content: string; created_at: number; tags: string[][] }): void {
   const state = getStateCallback?.()
   if (!state) return
 
   const roomHashTag = event.tags.find((t: string[]) => t[0] === 'e')
   if (!roomHashTag) return
   const roomHash = roomHashTag[1]
-  const chatId = 'room:' + roomHash
   if (!state.rooms[roomHash]) return
 
   const fromPubkey = event.pubkey
   if (fromPubkey === state.pubkey) return
 
+  // Add this pubkey as a known room member
+  state.addRoomMember(roomHash, fromPubkey)
+  saveLog('room', 'Discovered member ' + fromPubkey.slice(0, 8) + '... in room ' + state.rooms[roomHash].name)
+}
+
+/** Handle Kind 1059 Gift Wrap — unwrap, unseal, extract room message */
+async function handleGiftWrap(event: { id?: string; pubkey: string; content: string; created_at: number; tags: string[][] }): Promise<void> {
+  const state = getStateCallback?.()
+  if (!state?.privkey || !state.pubkey) return
+
   try {
-    const parsed = JSON.parse(event.content)
+    // Step 1: Unwrap Gift Wrap → get Seal (Kind 13)
+    const seal = unwrapGiftWrap(state.privkey, event)
+    if (!seal) return
+
+    const senderPubkey = seal.pubkey
+    if (senderPubkey === state.pubkey) return // own messages already stored locally
+
+    // Step 2: Unseal → get Rumor (Kind 14)
+    const rumor = unsealRumor(state.privkey, seal)
+    if (!rumor || rumor.kind !== CHAT_MESSAGE_KIND) return
+
+    // Step 3: Extract room hash from rumor tags
+    const roomHashTag = rumor.tags.find((t: string[]) => t[0] === 'e')
+    if (!roomHashTag) return
+    const roomHash = roomHashTag[1]
+    if (!state.rooms[roomHash]) return
+
+    // Learn this member
+    state.addRoomMember(roomHash, senderPubkey)
+
+    // Step 4: Parse message content
+    const parsed = JSON.parse(rumor.content)
     const now = Date.now()
     const ttl = parsed.ttl ? Number(parsed.ttl) : undefined
     const expiresAt = ttl ? now + ttl * 1000 : undefined
     if (expiresAt && expiresAt <= now) return
-    const displayName = state.contacts[fromPubkey]?.name
+
+    const displayName = state.contacts[senderPubkey]?.name
       || parsed.name
-      || fromPubkey.slice(0, 8) + '...'
+      || senderPubkey.slice(0, 8) + '...'
+
+    const chatId = 'room:' + roomHash
     const msg: Message = {
       type: parsed.type || 'text',
       content: parsed.content,
-      pubkey: fromPubkey,
+      pubkey: senderPubkey,
       name: displayName,
-      ts: event.created_at * 1000,
+      ts: rumor.created_at * 1000,
       eventId: event.id,
       ...(ttl ? { ttl, expiresAt } : {}),
     }
     onMessageCallback?.(chatId, msg)
   } catch (e) {
-    saveLog('room-error', 'Failed to parse room message: ' + String(e))
+    saveLog('giftwrap-error', 'Failed to unwrap gift wrap: ' + String(e))
   }
 }
 
@@ -323,12 +369,47 @@ export async function publishRoomMessage(
   roomHash: string,
   msgData: { type: string; content: string; name: string },
 ): Promise<void> {
-  const payload = JSON.stringify(msgData)
-  const event = createSignedEvent({
-    kind: 42,
+  const state = getStateCallback?.()
+  const room = state?.rooms[roomHash]
+  const members = room?.members ?? []
+
+  // Build a Kind 14 rumor (unsigned chat message)
+  const rumor = {
+    kind: CHAT_MESSAGE_KIND,
+    pubkey: myPubkey,
     created_at: Math.floor(Date.now() / 1000),
     tags: [['e', roomHash, '', 'root']],
-    content: payload,
+    content: JSON.stringify(msgData),
+  }
+
+  // For each known room member (excluding self), create Seal → Gift Wrap
+  for (const memberPubkey of members) {
+    if (memberPubkey === myPubkey) continue
+    try {
+      const seal = createSeal(privkey, myPubkey, memberPubkey, rumor)
+      const giftWrap = createGiftWrap(memberPubkey, seal)
+      publishToRelays(giftWrap)
+    } catch (e) {
+      saveLog('giftwrap-error', 'Failed to wrap for ' + memberPubkey.slice(0, 8) + '...: ' + String(e))
+    }
+  }
+
+  // Also publish a presence event so new members can discover us
+  publishRoomPresence(privkey, myPubkey, roomHash, msgData.name)
+}
+
+/** Publish a Kind 42 presence event (non-sensitive join/activity announcement) */
+export function publishRoomPresence(
+  privkey: Uint8Array,
+  myPubkey: string,
+  roomHash: string,
+  name: string,
+): void {
+  const event = createSignedEvent({
+    kind: ROOM_PRESENCE_KIND,
+    created_at: Math.floor(Date.now() / 1000),
+    tags: [['e', roomHash, '', 'root']],
+    content: JSON.stringify({ name }),
     pubkey: myPubkey,
   }, privkey)
   publishToRelays(event)

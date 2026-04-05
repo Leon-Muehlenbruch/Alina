@@ -17,6 +17,7 @@ interface MessageBubbleProps {
 export const MessageBubble = memo(function MessageBubble({ msg, isMine, isRoom, senderName, onImageClick }: MessageBubbleProps) {
   const lang = useStore(s => s.lang)
   const autoTranslate = useStore(s => s.autoTranslate)
+  const allowExternalTranslation = useStore(s => s.allowExternalTranslation)
   const setMessageTranslation = useStore(s => s.setMessageTranslation)
   const activeChat = useStore(s => s.activeChat)
   const t = useT()
@@ -35,7 +36,7 @@ export const MessageBubble = memo(function MessageBubble({ msg, isMine, isRoom, 
     ) return
 
     setTranslating(true)
-    translate(msg.content, lang).then(result => {
+    translate(msg.content, lang, allowExternalTranslation).then(result => {
       setTranslating(false)
       // Only store if it's actually a different language
       if (result.from !== lang && result.text !== msg.content) {

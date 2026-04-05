@@ -116,6 +116,8 @@ export const translations = {
     'room.nameTip': 'Tip: The more unique the name, the more secure the group.',
     'room.createBtn': 'Create group',
     'room.cancelBtn': 'Cancel',
+    'room.encrypted': 'End-to-end encrypted',
+    'room.membersCount': '{n} members',
     // Chat list
     'list.deleteConfirm': 'Delete "{name}"?\nThe chat history will also be removed.',
     'list.empty': 'No chats yet',
@@ -144,6 +146,9 @@ export const translations = {
     'translate.showOriginal': 'Original',
     'translate.showTranslation': 'Translation',
     'translate.translating': 'Translating…',
+    'translate.externalFallback': 'External translation fallback',
+    'translate.externalFallbackSub': 'If local translation (Chrome AI) is unavailable, use an external service (MyMemory). Messages are sent unencrypted.',
+    'translate.externalWarning': 'Decrypted messages are sent to an external server. This weakens end-to-end encryption.',
     // Landing - Nav
     'landing.guide': 'Guide',
     'landing.sourceCode': 'Source code',
@@ -319,7 +324,10 @@ export const translations = {
     'room.namePlaceholder': 'напр. Семья, Друзья, Работа …',
     'room.nameTip': 'Совет: чем уникальнее название, тем безопаснее группа.',
     'room.createBtn': 'Создать группу',
-    'room.cancelBtn': 'Отмена',    // Chat list
+    'room.cancelBtn': 'Отмена',
+    'room.encrypted': 'Сквозное шифрование',
+    'room.membersCount': '{n} участников',
+    // Chat list
     'list.deleteConfirm': 'Удалить «{name}»?\nИстория чата также будет удалена.',
     'list.empty': 'Чатов пока нет',
     'list.emptySub': 'Пригласи кого-нибудь или создай группу.',
@@ -347,6 +355,9 @@ export const translations = {
     'translate.showOriginal': 'Оригинал',
     'translate.showTranslation': 'Перевод',
     'translate.translating': 'Перевожу…',
+    'translate.externalFallback': 'Внешний перевод (запасной)',
+    'translate.externalFallbackSub': 'Если локальный перевод (Chrome AI) недоступен, использовать внешний сервис (MyMemory). Сообщения отправляются без шифрования.',
+    'translate.externalWarning': 'Расшифрованные сообщения отправляются на внешний сервер. Это ослабляет сквозное шифрование.',
     // Landing - Nav
     'landing.guide': 'Руководство',
     'landing.sourceCode': 'Исходный код',

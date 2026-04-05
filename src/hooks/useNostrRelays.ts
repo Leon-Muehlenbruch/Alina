@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useStore } from '../store/useStore'
-import { connectAllRelays, disconnectAllRelays, setOnMessage, setGetState, setRelayCountListener, publishDM, publishRoomMessage } from '../lib/nostr'
+import { connectAllRelays, disconnectAllRelays, setOnMessage, setGetState, setRelayCountListener, publishDM, publishRoomMessage, publishRoomPresence } from '../lib/nostr'
 import { setFlushCallback, flushQueue } from '../lib/offlineQueue'
 import type { Message, ActiveChat } from '../store/useStore'
 
@@ -11,6 +11,7 @@ export function useNostrRelays() {
   const addMessage = useStore(s => s.addMessage)
   const incrementUnread = useStore(s => s.incrementUnread)
   const ensureContact = useStore(s => s.ensureContact)
+  const addRoomMember = useStore(s => s.addRoomMember)
   const activeChat = useStore(s => s.activeChat)
 
   // Use a ref so the onMessage callback always sees the latest activeChat
@@ -29,6 +30,7 @@ export function useNostrRelays() {
       pubkey: identity.pubkey,
       contacts,
       rooms,
+      addRoomMember,
     }))
 
     setRelayCountListener(setRelayCount)
@@ -75,6 +77,7 @@ export function useNostrRelays() {
       pubkey: identity.pubkey,
       contacts,
       rooms,
+      addRoomMember,
     }))
-  }, [identity, contacts, rooms])
+  }, [identity, contacts, rooms, addRoomMember])
 }

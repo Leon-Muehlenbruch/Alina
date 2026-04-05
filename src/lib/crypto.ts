@@ -5,10 +5,99 @@ import {
   verifyEvent,
   nip04,
   nip19,
+  nip44,
 } from 'nostr-tools'
 import type { UnsignedEvent, VerifiedEvent } from 'nostr-tools'
 
 export { nip19 }
+
+// ── NIP-44 Encryption (used by NIP-17 Gift Wraps) ─────────────────────────────
+
+export function nip44Encrypt(
+  privkey: Uint8Array,
+  recipientPubkey: string,
+  plaintext: string,
+): string {
+  const key = nip44.v2.utils.getConversationKey(privkey, recipientPubkey)
+  return nip44.v2.encrypt(plaintext, key)
+}
+
+export function nip44Decrypt(
+  privkey: Uint8Array,
+  senderPubkey: string,
+  ciphertext: string,
+): string {
+  const key = nip44.v2.utils.getConversationKey(privkey, senderPubkey)
+  return nip44.v2.decrypt(ciphertext, key)
+}
+
+// ── NIP-17 Seal & Gift Wrap ───────────────────────────────────────────────────
+
+/** Create a Kind 13 Seal: encrypt a Kind 14 rumor for a specific recipient */
+export function createSeal(
+  senderPrivkey: Uint8Array,
+  senderPubkey: string,
+  recipientPubkey: string,
+  rumor: object,
+): VerifiedEvent {
+  const rumorJson = JSON.stringify(rumor)
+  const encrypted = nip44Encrypt(senderPrivkey, recipientPubkey, rumorJson)
+  return finalizeEvent({
+    kind: 13,
+    created_at: randomTimestamp(),
+    tags: [],
+    content: encrypted,
+  }, senderPrivkey) as VerifiedEvent
+}
+
+/** Create a Kind 1059 Gift Wrap: encrypt a Seal with an ephemeral key */
+export function createGiftWrap(
+  recipientPubkey: string,
+  seal: VerifiedEvent,
+): VerifiedEvent {
+  const ephemeralPrivkey = generateSecretKey()
+  const ephemeralPubkey = getPublicKey(ephemeralPrivkey)
+  const sealJson = JSON.stringify(seal)
+  const encrypted = nip44Encrypt(ephemeralPrivkey, recipientPubkey, sealJson)
+  return finalizeEvent({
+    kind: 1059,
+    created_at: randomTimestamp(),
+    tags: [['p', recipientPubkey]],
+    content: encrypted,
+  }, ephemeralPrivkey) as VerifiedEvent
+}
+
+/** Unwrap a Kind 1059 Gift Wrap → returns the Seal (Kind 13) inside */
+export function unwrapGiftWrap(
+  recipientPrivkey: Uint8Array,
+  giftWrap: { pubkey: string; content: string },
+): VerifiedEvent | null {
+  try {
+    const sealJson = nip44Decrypt(recipientPrivkey, giftWrap.pubkey, giftWrap.content)
+    const seal = JSON.parse(sealJson) as VerifiedEvent
+    if (seal.kind !== 13) return null
+    if (!verifyEvent(seal)) return null
+    return seal
+  } catch { return null }
+}
+
+/** Unseal a Kind 13 Seal → returns the Kind 14 rumor (chat message) inside */
+export function unsealRumor(
+  recipientPrivkey: Uint8Array,
+  seal: VerifiedEvent,
+): { kind: number; pubkey: string; content: string; created_at: number; tags: string[][] } | null {
+  try {
+    const rumorJson = nip44Decrypt(recipientPrivkey, seal.pubkey, seal.content)
+    return JSON.parse(rumorJson)
+  } catch { return null }
+}
+
+/** Randomize timestamp ±48h to hide metadata */
+function randomTimestamp(): number {
+  const now = Math.floor(Date.now() / 1000)
+  const jitter = Math.floor(Math.random() * 172800) - 86400 // ±24h
+  return now + jitter
+}
 
 export function createKeyPair(): { privkey: Uint8Array; pubkey: string } {
   const privkey = generateSecretKey()

@@ -18,6 +18,7 @@ export interface Contact {
 export interface Room {
   name: string
   hash: string
+  members: string[] // pubkeys of known group members
 }
 
 export interface Message {
@@ -58,6 +59,7 @@ interface AppState {
   // Rooms
   rooms: Record<string, Room>
   addRoom: (hash: string, name: string) => void
+  addRoomMember: (hash: string, pubkey: string) => void
 
   // Messages
   messages: Record<string, Message[]>
@@ -86,6 +88,8 @@ interface AppState {
   // Auto-translate
   autoTranslate: boolean
   setAutoTranslate: (v: boolean) => void
+  allowExternalTranslation: boolean
+  setAllowExternalTranslation: (v: boolean) => void
   setMessageTranslation: (chatId: string, ts: number, pubkey: string, translated: string, detectedLang: string) => void
 
   // UI
@@ -200,8 +204,20 @@ export const useStore = create<AppState>((set, get) => ({
   rooms: storage.loadRooms(),
 
   addRoom: (hash, name) => {
+    const { rooms, identity } = get()
+    const members = identity ? [identity.pubkey] : []
+    const existing = rooms[hash]
+    const updated = { ...rooms, [hash]: { name, hash, members: existing?.members ?? members } }
+    storage.saveRooms(updated)
+    set({ rooms: updated })
+  },
+
+  addRoomMember: (hash, pubkey) => {
     const { rooms } = get()
-    const updated = { ...rooms, [hash]: { name, hash } }
+    const room = rooms[hash]
+    if (!room) return
+    if (room.members.includes(pubkey)) return
+    const updated = { ...rooms, [hash]: { ...room, members: [...room.members, pubkey] } }
     storage.saveRooms(updated)
     set({ rooms: updated })
   },
@@ -286,6 +302,8 @@ export const useStore = create<AppState>((set, get) => ({
   // Auto-translate
   autoTranslate: localStorage.getItem('alina-autotranslate') === 'true',
   setAutoTranslate: (v) => { localStorage.setItem('alina-autotranslate', String(v)); set({ autoTranslate: v }) },
+  allowExternalTranslation: localStorage.getItem('alina-allow-external-translate') === 'true',
+  setAllowExternalTranslation: (v) => { localStorage.setItem('alina-allow-external-translate', String(v)); set({ allowExternalTranslation: v }) },
   setMessageTranslation: (chatId, ts, pubkey, translated, detectedLang) => {
     const { messages } = get()
     const msgs = messages[chatId]

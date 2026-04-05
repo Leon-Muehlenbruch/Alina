@@ -20,6 +20,8 @@ export function SettingsModal() {
   const setLang = useStore(s => s.setLang)
   const autoTranslate = useStore(s => s.autoTranslate)
   const setAutoTranslate = useStore(s => s.setAutoTranslate)
+  const allowExternalTranslation = useStore(s => s.allowExternalTranslation)
+  const setAllowExternalTranslation = useStore(s => s.setAllowExternalTranslation)
   const t = useT()
 
   const [name, setName] = useState(identity?.name ?? '')
@@ -95,6 +97,42 @@ export function SettingsModal() {
             }} />
           </button>
         </div>
+
+        {autoTranslate && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+              <div>
+                <div style={{ fontSize: '0.82rem', fontWeight: 500, color: 'var(--text)' }}>{t('translate.externalFallback')}</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.15rem' }}>{t('translate.externalFallbackSub')}</div>
+              </div>
+              <button
+                onClick={() => setAllowExternalTranslation(!allowExternalTranslation)}
+                style={{
+                  flexShrink: 0, width: 44, height: 24, borderRadius: 12,
+                  background: allowExternalTranslation ? 'var(--accent)' : 'var(--surface2)',
+                  border: `1px solid ${allowExternalTranslation ? 'var(--accent)' : 'var(--border)'}`,
+                  cursor: 'pointer', position: 'relative', transition: 'background 0.2s',
+                }}
+              >
+                <span style={{
+                  position: 'absolute', top: 3, left: allowExternalTranslation ? 23 : 3,
+                  width: 16, height: 16, borderRadius: '50%',
+                  background: allowExternalTranslation ? '#1a1a1b' : 'var(--muted)',
+                  transition: 'left 0.2s',
+                }} />
+              </button>
+            </div>
+            {allowExternalTranslation && (
+              <div style={{
+                fontSize: '0.72rem', color: '#c97070', background: 'rgba(201,112,112,0.08)',
+                border: '1px solid rgba(201,112,112,0.2)', borderRadius: 6,
+                padding: '0.5rem 0.65rem', lineHeight: 1.5,
+              }}>
+                ⚠ {t('translate.externalWarning')}
+              </div>
+            )}
+          </div>
+        )}
 
         <div>
           <div className="setup-label">{t('settings.language')}</div>

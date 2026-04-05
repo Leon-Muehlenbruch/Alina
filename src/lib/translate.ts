@@ -91,7 +91,7 @@ async function translateMyMemory(text: string, from: string, to: string): Promis
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
-export async function translate(text: string, targetLang: string): Promise<TranslationResult> {
+export async function translate(text: string, targetLang: string, allowExternal = true): Promise<TranslationResult> {
   if (!text.trim()) return { text, from: targetLang }
 
   const cached = cacheGet(text, targetLang)
@@ -103,10 +103,11 @@ export async function translate(text: string, targetLang: string): Promise<Trans
 
   if (fromBase === toBase) return { text, from: fromBase }
 
-  // Try Chrome AI first (offline & private), then MyMemory
-  const translated =
-    (await translateChromeAI(text, fromBase, toBase)) ??
-    (await translateMyMemory(text, fromBase, toBase))
+  // Try Chrome AI first (offline & private), then MyMemory only if allowed
+  let translated = await translateChromeAI(text, fromBase, toBase)
+  if (!translated && allowExternal) {
+    translated = await translateMyMemory(text, fromBase, toBase)
+  }
 
   if (!translated) return { text, from: fromBase }
 

@@ -69,7 +69,7 @@ describe('storage', () => {
   describe('rooms', () => {
     it('should save and load rooms', () => {
       const rooms: Record<string, Room> = {
-        hash1: { name: 'General', hash: 'hash1' },
+        hash1: { name: 'General', hash: 'hash1', members: [] },
       }
       saveRooms(rooms)
       expect(loadRooms()).toEqual(rooms)
