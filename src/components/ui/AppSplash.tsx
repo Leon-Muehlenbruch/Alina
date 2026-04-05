@@ -72,9 +72,9 @@ export function AppSplash({ onDone }: { onDone: () => void }) {
 
       <div className="splash-loader" />
       <div className="splash-text" style={{
-        marginTop: '2.5rem', fontFamily: 'sans-serif',
-        fontSize: '2rem', fontWeight: 300,
-        color: '#B38463', letterSpacing: '0.08em',
+        marginTop: '2.5rem', fontFamily: "'Jost', sans-serif",
+        fontSize: '2rem', fontWeight: 200,
+        color: '#B38463', letterSpacing: '0.1em',
       }}>
         alina
       </div>

@@ -41,7 +41,7 @@ export function SetupScreen() {
       <div className="setup-inner">
         <div className="logo-block">
           <img src="/logo.svg" alt="Alina" className="setup-logo-img" />
-          <div className="logo-name">Alina</div>
+          <div className="logo-name">alina</div>
           <div className="logo-tagline">{t('setup.tagline')}</div>
           <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.8rem', justifyContent: 'center' }}>
             {LANGS.map(l => (

@@ -31,8 +31,8 @@ export function ChatArea() {
             <Menu size={22} />
             <span>{t('chat.openSidebar')}</span>
           </button>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: '3.5rem', color: 'var(--border)', fontStyle: 'italic', marginBottom: '1rem' }}>
-            Alina
+          <div style={{ fontFamily: "'Jost', sans-serif", fontWeight: 200, fontSize: '3.5rem', color: 'var(--border)', letterSpacing: '0.1em', marginBottom: '1rem' }}>
+            alina
           </div>
           <p style={{ fontSize: '1rem', color: 'var(--muted)', marginBottom: '0.3rem', fontWeight: 500 }}>
             {t('chat.tagline')}

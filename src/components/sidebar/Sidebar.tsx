@@ -34,7 +34,7 @@ export function Sidebar() {
       <div className="sidebar-header">
         <span className="sidebar-logo">
           <img src="/logo.svg" alt="Alina" className="sidebar-logo-img" />
-          Alina
+          alina
           <span
             title={t('sidebar.relays', { n: String(relayCount), total: String(total) })}
             style={{

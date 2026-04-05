@@ -71,11 +71,13 @@ body {
 }
 
 .logo-name {
-  font-family: var(--font-display);
+  font-family: 'Jost', sans-serif;
+  font-weight: 200;
   font-size: 3.5rem;
   color: var(--accent);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.1em;
   line-height: 1;
+  text-transform: lowercase;
 }
 
 .logo-tagline {
@@ -215,10 +217,12 @@ input[type="text"]:focus { border-color: var(--accent); }
 }
 
 .sidebar-logo {
-  font-family: var(--font-display);
+  font-family: 'Jost', sans-serif;
+  font-weight: 200;
   font-size: 1.8rem;
   color: var(--accent);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.1em;
+  text-transform: lowercase;
   display: flex;
   align-items: center;
   gap: 0.45rem;
@@ -869,9 +873,9 @@ input[type="text"]:focus { border-color: var(--accent); }
 .nav-logo img { width: 44px; height: 44px; }
 
 .nav-wordmark {
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Jost', sans-serif;
   font-size: 1.3rem;
-  font-weight: 400;
+  font-weight: 200;
   color: var(--warm);
   letter-spacing: 0.08em;
 }
