@@ -27,8 +27,7 @@ export function LandingPage() {
       {/* NAV */}
       <nav>
         <Link to="/" className="nav-logo">
-          <img src="/logo.svg?v=2" alt="Alina" />
-          <span className="nav-wordmark">alina</span>
+          <img src="/logo.svg?v=3" alt="Alina" />
         </Link>
         <div className="nav-right">
           <a href="#howto" className="nav-link">{t('landing.guide')}</a>
@@ -49,10 +48,7 @@ export function LandingPage() {
       </nav>
       {/* HERO */}
       <section className="hero">
-        <div className="hero-logo-block">
-          <img src="/logo.svg?v=2" alt="Alina" className="hero-logo" />
-          <span className="hero-logo-name">alina</span>
-        </div>
+        <img src="/logo.svg?v=3" alt="Alina" className="hero-logo" />
         <h1 className="hero-title">
           {t('landing.heroTitle1')}<br /><em>{t('landing.heroTitle2')}</em>
         </h1>
@@ -211,10 +207,7 @@ export function LandingPage() {
       {/* FOOTER */}
       <footer>
         <div className="footer-left">
-          <div className="footer-logo-block">
-            <img src="/logo.svg?v=2" alt="Alina" className="footer-logo" />
-            <span className="footer-logo-name">alina</span>
-          </div>
+          <img src="/logo.svg?v=3" alt="Alina" className="footer-logo" />
           <span className="footer-text">{t('landing.footerText')}</span>
         </div>
         <span className="footer-mit">{t('landing.footerLicense')}</span>

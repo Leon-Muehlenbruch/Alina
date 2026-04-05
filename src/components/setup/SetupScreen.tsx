@@ -40,7 +40,7 @@ export function SetupScreen() {
     <div id="screen-setup" className="screen active">
       <div className="setup-inner">
         <div className="logo-block">
-          <img src="/logo.svg?v=2" alt="Alina" className="setup-logo-img" />
+          <img src="/logo.svg?v=3" alt="Alina" className="setup-logo-img" />
           <div className="logo-name">alina</div>
           <div className="logo-tagline">{t('setup.tagline')}</div>
           <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.8rem', justifyContent: 'center' }}>

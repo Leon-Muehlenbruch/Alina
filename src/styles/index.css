@@ -934,17 +934,10 @@ input[type="text"]:focus { border-color: var(--accent); }
   position: relative;
 }
 
-.hero-logo-block {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 2.5rem;
-  animation: fadeDown 1s ease both;
-}
 .hero-logo {
-  width: 110px;
-  height: 110px;
-  margin-bottom: -1.2rem;
+  width: 140px;
+  margin-bottom: 2rem;
+  animation: fadeDown 1s ease both;
 }
 .hero-logo-name {
   font-family: 'Jost', sans-serif;
