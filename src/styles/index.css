@@ -1232,8 +1232,13 @@ input[type="text"]:focus { border-color: var(--accent); }
 }
 
 @media(max-width:640px) {
-  .landing-page nav { padding: 1rem 1.5rem; }
-  .nav-right { gap: 1rem; }
+  .landing-page nav { padding: 1rem 1.2rem; }
+  .nav-right { gap: 0.6rem; }
+  .nav-link { display: none; }
+  .lang-btn { font-size: 0.65rem; padding: 0.2rem 0.35rem; }
+  .nav-cta { font-size: 0.7rem; padding: 0.55rem 1rem; letter-spacing: 0.08em; }
+  .nav-logo img { width: 32px; height: 32px; }
+  .nav-wordmark { font-size: 1.1rem; }
   .landing-page section { padding: 5rem 1.5rem; }
 }
 
