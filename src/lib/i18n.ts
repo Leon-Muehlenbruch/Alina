@@ -59,8 +59,10 @@ export const translations = {
     'chat.guide3Desc': 'Everyone who enters the same group name joins the same chat.',
     'chat.guide4Title': 'Save your key',
     'chat.guide4Desc': 'Open Settings and write down your private key. Lose it = lose your account.',
-    'chat.guide5Title': 'Install as app',
-    'chat.guide5Desc': 'Add alina to your home screen for vibration and full-screen mode.',
+    'chat.guide5Title': 'Self-destructing messages',
+    'chat.guide5Desc': 'Tap the timer icon next to the input field. Choose how long the message should live — 30s, 5m, 30m, 1h or 24h. After that, it vanishes.',
+    'chat.guide6Title': 'Install as app',
+    'chat.guide6Desc': 'Add alina to your home screen for vibration and full-screen mode.',
     // Chat header
     'header.pubkeyCopied': 'Public key copied!',
     'header.back': 'Back',
@@ -301,8 +303,10 @@ export const translations = {
     'chat.guide3Desc': 'Все, кто введут одно название — попадут в один чат.',
     'chat.guide4Title': 'Сохрани ключ',
     'chat.guide4Desc': 'Открой Настройки и запиши приватный ключ. Потеряешь — потеряешь аккаунт.',
-    'chat.guide5Title': 'Установи как приложение',
-    'chat.guide5Desc': 'Добавь alina на главный экран для вибрации и полноэкранного режима.',    // Chat header
+    'chat.guide5Title': 'Самоуничтожающиеся сообщения',
+    'chat.guide5Desc': 'Нажми на иконку таймера рядом с полем ввода. Выбери время жизни — 30с, 5м, 30м, 1ч или 24ч. После этого сообщение исчезнет.',
+    'chat.guide6Title': 'Установи как приложение',
+    'chat.guide6Desc': 'Добавь alina на главный экран для вибрации и полноэкранного режима.',    // Chat header
     'header.pubkeyCopied': 'Публичный ключ скопирован!',
     'header.back': 'Назад',
     'header.groupSubtitle': 'Группа · до 10 человек',

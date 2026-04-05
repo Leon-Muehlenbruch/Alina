@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { MessageCirclePlus, Users, Menu, UserPlus, KeyRound, Hash, Download, ArrowRight } from 'lucide-react'
+import { MessageCirclePlus, Users, Menu, UserPlus, KeyRound, Hash, Download, ArrowRight, Timer } from 'lucide-react'
 import { useStore } from '../../store/useStore'
 import { useT } from '../../hooks/useT'
 import { ChatHeader } from './ChatHeader'
@@ -24,7 +24,8 @@ export function ChatArea() {
     { icon: <ArrowRight size={18} />, title: t('chat.guide2Title'), desc: t('chat.guide2Desc') },
     { icon: <Hash size={18} />, title: t('chat.guide3Title'), desc: t('chat.guide3Desc') },
     { icon: <KeyRound size={18} />, title: t('chat.guide4Title'), desc: t('chat.guide4Desc') },
-    { icon: <Download size={18} />, title: t('chat.guide5Title'), desc: t('chat.guide5Desc') },
+    { icon: <Timer size={18} />, title: t('chat.guide5Title'), desc: t('chat.guide5Desc') },
+    { icon: <Download size={18} />, title: t('chat.guide6Title'), desc: t('chat.guide6Desc') },
   ]
 
   if (!activeChat) {
