@@ -42,8 +42,13 @@ export function useNostrRelays() {
       }
 
       const added = addMessage(chatId, msg)
-      if (added && activeChatRef.current?.chatId !== chatId) {
-        incrementUnread(chatId)
+      if (added) {
+        // Vibrate on incoming message
+        if (navigator.vibrate) navigator.vibrate(200)
+
+        if (activeChatRef.current?.chatId !== chatId) {
+          incrementUnread(chatId)
+        }
       }
     })
 
