@@ -49,7 +49,10 @@ export function LandingPage() {
       </nav>
       {/* HERO */}
       <section className="hero">
-        <img src="/logo.svg" alt="Alina" className="hero-logo" />
+        <div className="hero-logo-block">
+          <img src="/logo.svg" alt="Alina" className="hero-logo" />
+          <span className="hero-logo-name">alina</span>
+        </div>
         <h1 className="hero-title">
           {t('landing.heroTitle1')}<br /><em>{t('landing.heroTitle2')}</em>
         </h1>
@@ -208,7 +211,10 @@ export function LandingPage() {
       {/* FOOTER */}
       <footer>
         <div className="footer-left">
-          <img src="/logo.svg" alt="Alina" className="footer-logo" />
+          <div className="footer-logo-block">
+            <img src="/logo.svg" alt="Alina" className="footer-logo" />
+            <span className="footer-logo-name">alina</span>
+          </div>
           <span className="footer-text">{t('landing.footerText')}</span>
         </div>
         <span className="footer-mit">{t('landing.footerLicense')}</span>
