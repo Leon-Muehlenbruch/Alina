@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
-import { ArrowLeft, Copy, Check, UserPlus, KeyRound } from 'lucide-react'
+import { ArrowLeft, Copy, Check, UserPlus, KeyRound, Fingerprint } from 'lucide-react'
 import { useStore } from '../../store/useStore'
 import { useT } from '../../hooks/useT'
 import { publishInviteCode, lookupInviteCode, resubscribeAll } from '../../lib/nostr'
+import { decodeNpub } from '../../lib/crypto'
 import { INVITE_CODE_DURATION } from '../../lib/constants'
 
-type View = 'choose' | 'invite' | 'join'
+type View = 'choose' | 'invite' | 'join' | 'pubkey'
 type LookupState = 'idle' | 'searching' | 'found' | 'not_found'
 
 export function AddContactModal() {
@@ -32,6 +33,11 @@ export function AddContactModal() {
   const [joinName, setJoinName] = useState('')
   const [lookupState, setLookupState] = useState<LookupState>('idle')
   const [lookupDone, setLookupDone] = useState(false)
+
+  // Pubkey
+  const [pubkeyInput, setPubkeyInput] = useState('')
+  const [pubkeyName, setPubkeyName] = useState('')
+  const [pubkeyError, setPubkeyError] = useState('')
 
   const close = () => setOpenModal(null)
 
@@ -136,6 +142,15 @@ export function AddContactModal() {
             {t('contact.enterCode')}
           </button>
 
+          <button
+            className="btn"
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '1rem', background: 'transparent', color: 'var(--muted)', border: '1px solid var(--border)' }}
+            onClick={() => setView('pubkey')}
+          >
+            <Fingerprint size={18} />
+            {t('contact.addPubkey')}
+          </button>
+
           <button className="btn secondary" style={{ width: '100%' }} onClick={close}>{t('contact.close')}</button>
         </div>
       </div>
@@ -223,6 +238,75 @@ export function AddContactModal() {
           )}
 
           <button className="btn secondary" style={{ width: '100%' }} onClick={close}>{t('contact.cancelBtn')}</button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── PUBKEY VIEW ──
+  if (view === 'pubkey') {
+    const handleAddPubkey = () => {
+      if (!pubkeyInput.trim() || !pubkeyName.trim()) return
+      try {
+        const hex = decodeNpub(pubkeyInput.trim())
+        addContact(hex, pubkeyName.trim())
+        resubscribeAll()
+        showStatus(t('contact.pubkeyAdded'), 3000)
+        close()
+      } catch {
+        setPubkeyError(t('contact.pubkeyInvalid'))
+      }
+    }
+
+    return (
+      <div className="modal-overlay open" onClick={e => e.target === e.currentTarget && close()}>
+        <div className="modal">
+          <button className="modal-back-btn" onClick={() => { setView('choose'); setPubkeyInput(''); setPubkeyName(''); setPubkeyError('') }}>
+            <ArrowLeft size={15} /> {t('contact.back')}
+          </button>
+
+          <div className="modal-title">{t('contact.addPubkey')}</div>
+
+          <div>
+            <div className="setup-label">{t('contact.pubkeyLabel')}</div>
+            <input
+              type="text"
+              placeholder={t('contact.pubkeyPlaceholder')}
+              value={pubkeyInput}
+              onChange={e => { setPubkeyInput(e.target.value); setPubkeyError('') }}
+              style={{ fontSize: '0.78rem', fontFamily: 'monospace' }}
+              autoFocus
+            />
+          </div>
+
+          <div>
+            <div className="setup-label">{t('contact.pubkeyName')}</div>
+            <input
+              type="text"
+              placeholder={t('contact.contactNamePlaceholder')}
+              maxLength={30}
+              value={pubkeyName}
+              onChange={e => setPubkeyName(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && pubkeyName.trim() && pubkeyInput.trim() && handleAddPubkey()}
+            />
+          </div>
+
+          {pubkeyError && (
+            <div style={{ fontSize: '0.82rem', color: '#e07070', background: '#2a1818', border: '1px solid #5a2a2a', borderRadius: 8, padding: '0.7rem 0.9rem' }}>
+              {pubkeyError}
+            </div>
+          )}
+
+          <button
+            className="btn"
+            style={{ width: '100%' }}
+            onClick={handleAddPubkey}
+            disabled={!pubkeyInput.trim() || !pubkeyName.trim()}
+          >
+            {t('contact.addBtn')}
+          </button>
+
+          <button className="btn secondary" style={{ width: '100%' }} onClick={close}>{t('contact.close')}</button>
         </div>
       </div>
     )
