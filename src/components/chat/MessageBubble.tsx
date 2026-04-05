@@ -78,7 +78,7 @@ export const MessageBubble = memo(function MessageBubble({ msg, isMine, isRoom, 
         <div className="msg-bubble image-msg">
           <img
             src={msg.content}
-            alt="Bild"
+            alt="Image"
             onClick={() => onImageClick(msg.content)}
             style={{ width: '100%', maxWidth: 260, maxHeight: 260, borderRadius: 10, display: 'block', cursor: 'pointer', objectFit: 'contain' }}
           />

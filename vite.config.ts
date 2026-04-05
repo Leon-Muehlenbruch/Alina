@@ -34,13 +34,13 @@ export default defineConfig({
       manifest: {
         name: 'Alina Chat',
         short_name: 'Alina',
-        description: 'Dezentraler Messenger. Kein Server. Kein Account. Kein Eigentuemer.',
+        description: 'Decentralised messenger. No server. No account. No owner.',
         start_url: '/',
         display: 'standalone',
         background_color: '#0e0e0f',
         theme_color: '#B38463',
         orientation: 'portrait-primary',
-        lang: 'de',
+        lang: 'en',
         icons: [
           { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
           { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },

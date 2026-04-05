@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Alina – Architekturübersicht</title>
+<title>Alina – Architecture Overview</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #0e0e0f; color: #c8bfaa; font-family: 'Jost', 'Segoe UI', sans-serif; min-height: 100vh; padding: 2rem; }
@@ -63,7 +63,7 @@
 <body>
 
 <h1>Alina</h1>
-<p class="subtitle">Architekturübersicht — Nostr + lokale Logik</p>
+<p class="subtitle">Architecture overview — Nostr + local logic</p>
 
 <div class="diagram">
 
@@ -71,24 +71,24 @@
   <div class="section">
     <div class="section-header">
       <span class="icon">🖥</span>
-      <span class="label">UI-Schicht — React 19 Komponenten</span>
+      <span class="label">UI Layer — React 19 Components</span>
     </div>
     <div class="section-body">
       <div class="box">
         <div class="title">SetupScreen</div>
-        <div class="desc">Identität erstellen oder importieren (nsec). Schlüsselpaar wird lokal generiert.</div>
+        <div class="desc">Create or import identity (nsec). Key pair is generated locally.</div>
       </div>
       <div class="box">
         <div class="title">Sidebar</div>
-        <div class="desc">Chatliste, Kontakte, Gruppen, Relay-Statusanzeige (●/●/●).</div>
+        <div class="desc">Chat list, contacts, groups, relay status indicator.</div>
       </div>
       <div class="box">
         <div class="title">ChatArea</div>
-        <div class="desc">MessageBubble (Text/Bild/Location), ChatInput, EmojiPicker, TTL-Picker.</div>
+        <div class="desc">MessageBubble (text/image/location), ChatInput, EmojiPicker, TTL picker.</div>
       </div>
       <div class="box">
         <div class="title">Modals</div>
-        <div class="desc">Einstellungen, Kontakt hinzufügen (Einladungscode), Gruppe erstellen.</div>
+        <div class="desc">Settings, add contact (invite code), create group.</div>
       </div>
     </div>
   </div>
@@ -112,7 +112,7 @@
       </div>
       <div class="box accent">
         <div class="title">Messages</div>
-        <div class="desc">Record&lt;chatId, Message[]&gt; — max 200 pro Chat</div>
+        <div class="desc">Record&lt;chatId, Message[]&gt; — max 200 per chat</div>
         <span class="tag">localStorage</span>
       </div>
       <div class="box">
@@ -121,7 +121,7 @@
         <span class="tag">in-memory</span>
       </div>
       <div class="box">
-        <div class="title">Einstellungen</div>
+        <div class="title">Settings</div>
         <div class="desc">lang, autoTranslate, allowExternalTranslation</div>
         <span class="tag">localStorage</span>
       </div>
@@ -129,64 +129,64 @@
   </div>
 
   <!-- ════════════ MESSAGE SEND FLOW ════════════ -->
-  <div class="divider">── Nachrichtenfluss: Senden ──</div>
+  <div class="divider">── Message flow: Send ──</div>
 
   <div class="flow">
     <div class="flow-step">
       <div class="num">1</div>
-      <div class="flow-label">Eingabe</div>
-      <div class="flow-desc">User tippt Nachricht in ChatInput</div>
+      <div class="flow-label">Input</div>
+      <div class="flow-desc">User types message in ChatInput</div>
     </div>
     <div class="flow-step">
       <div class="num">2</div>
       <div class="flow-label">Envelope</div>
-      <div class="flow-desc">{type, content, ttl?} als JSON verpackt</div>
+      <div class="flow-desc">{type, content, ttl?} wrapped as JSON</div>
     </div>
     <div class="flow-step">
       <div class="num">3</div>
-      <div class="flow-label">Verschlüsselung</div>
-      <div class="flow-desc">DM: NIP-04 (ECDH + AES-256-CBC)<br>Room: Klartext (Kind 42)</div>
+      <div class="flow-label">Encryption</div>
+      <div class="flow-desc">DM: NIP-04 (ECDH + AES-256-CBC)<br>Room: Plaintext (Kind 42)</div>
     </div>
     <div class="flow-step">
       <div class="num">4</div>
-      <div class="flow-label">Signierung</div>
-      <div class="flow-desc">Schnorr-Signatur mit privatem Schlüssel (secp256k1)</div>
+      <div class="flow-label">Signing</div>
+      <div class="flow-desc">Schnorr signature with private key (secp256k1)</div>
     </div>
     <div class="flow-step">
       <div class="num">5</div>
       <div class="flow-label">Broadcast</div>
-      <div class="flow-desc">Event an alle 7 Relays per WebSocket gesendet</div>
+      <div class="flow-desc">Event sent to all 7 relays via WebSocket</div>
     </div>
   </div>
 
   <!-- ════════════ MESSAGE RECEIVE FLOW ════════════ -->
-  <div class="divider">── Nachrichtenfluss: Empfangen ──</div>
+  <div class="divider">── Message flow: Receive ──</div>
 
   <div class="flow">
     <div class="flow-step">
       <div class="num">1</div>
       <div class="flow-label">Relay Event</div>
-      <div class="flow-desc">WebSocket empfängt Kind 4 (DM) oder Kind 42 (Room)</div>
+      <div class="flow-desc">WebSocket receives Kind 4 (DM) or Kind 42 (Room)</div>
     </div>
     <div class="flow-step">
       <div class="num">2</div>
-      <div class="flow-label">Entschlüsselung</div>
-      <div class="flow-desc">DM: NIP-04 Decrypt mit eigenem privkey + Sender-pubkey</div>
+      <div class="flow-label">Decryption</div>
+      <div class="flow-desc">DM: NIP-04 decrypt with own privkey + sender pubkey</div>
     </div>
     <div class="flow-step">
       <div class="num">3</div>
-      <div class="flow-label">Deduplizierung</div>
-      <div class="flow-desc">eventId oder (ts + pubkey) — doppelte Events ignoriert</div>
+      <div class="flow-label">Deduplication</div>
+      <div class="flow-desc">eventId or (ts + pubkey) — duplicate events ignored</div>
     </div>
     <div class="flow-step">
       <div class="num">4</div>
       <div class="flow-label">Store</div>
-      <div class="flow-desc">addMessage() → Zustand + localStorage persistiert</div>
+      <div class="flow-desc">addMessage() → Zustand + localStorage persisted</div>
     </div>
     <div class="flow-step">
       <div class="num">5</div>
-      <div class="flow-label">Anzeige</div>
-      <div class="flow-desc">React rendert MessageBubble + optionale Auto-Übersetzung</div>
+      <div class="flow-label">Display</div>
+      <div class="flow-desc">React renders MessageBubble + optional auto-translation</div>
     </div>
   </div>
 
@@ -194,37 +194,37 @@
   <div class="section">
     <div class="section-header">
       <span class="icon">🔧</span>
-      <span class="label">Library-Module — src/lib/</span>
+      <span class="label">Library Modules — src/lib/</span>
     </div>
     <div class="section-body">
       <div class="box green">
         <div class="title">crypto.ts</div>
-        <div class="desc">Schlüssel-Generierung, NIP-04 Encrypt/Decrypt, Event-Signierung, NIP-19 Encoding (npub/nsec).</div>
+        <div class="desc">Key generation, NIP-04 encrypt/decrypt, event signing, NIP-19 encoding (npub/nsec).</div>
         <span class="tag green">E2E</span><span class="tag green">secp256k1</span>
       </div>
       <div class="box green">
         <div class="title">nostr.ts</div>
-        <div class="desc">WebSocket-Relay-Schicht: connect, subscribe, publish. Invite-Code Lookup (Kind 10420).</div>
+        <div class="desc">WebSocket relay layer: connect, subscribe, publish. Invite code lookup (Kind 10420).</div>
         <span class="tag green">7 Relays</span><span class="tag green">Auto-Reconnect</span>
       </div>
       <div class="box">
         <div class="title">storage.ts</div>
-        <div class="desc">Typisierte localStorage-Wrapper mit QuotaExceededError-Handling.</div>
+        <div class="desc">Typed localStorage wrappers with QuotaExceededError handling.</div>
         <span class="tag">localStorage</span>
       </div>
       <div class="box">
         <div class="title">offlineQueue.ts</div>
-        <div class="desc">Nachrichten-Warteschlange bei Offline. Flush bei Reconnect oder 'online'-Event.</div>
+        <div class="desc">Message queue when offline. Flush on reconnect or 'online' event.</div>
         <span class="tag">Offline-First</span>
       </div>
       <div class="box">
         <div class="title">translate.ts</div>
-        <div class="desc">Spracherkennung + Übersetzung. Chrome AI (lokal) → MyMemory API (extern, optional).</div>
-        <span class="tag green">Chrome AI lokal</span><span class="tag red">MyMemory extern</span>
+        <div class="desc">Language detection + translation. Chrome AI (local) → MyMemory API (external, optional).</div>
+        <span class="tag green">Chrome AI local</span><span class="tag red">MyMemory external</span>
       </div>
       <div class="box">
         <div class="title">i18n.ts</div>
-        <div class="desc">Übersetzungswörterbuch (EN, RU). Flache Key-Value-Struktur mit Interpolation.</div>
+        <div class="desc">Translation dictionary (EN, RU). Flat key-value structure with interpolation.</div>
       </div>
     </div>
   </div>
@@ -233,43 +233,43 @@
   <div class="section">
     <div class="section-header">
       <span class="icon">🌐</span>
-      <span class="label">Nostr-Protokoll — Dezentrales Relay-Netzwerk</span>
+      <span class="label">Nostr Protocol — Decentralised Relay Network</span>
     </div>
     <div class="section-body" style="flex-direction: column; gap: 1.2rem;">
 
       <div class="two-col">
         <div class="box accent">
-          <div class="title">Event-Typen (Publish & Subscribe)</div>
+          <div class="title">Event Types (Publish & Subscribe)</div>
           <table style="width:100%; font-size:0.7rem; color:#7a7672; margin-top:0.4rem; border-collapse:collapse;">
             <tr style="border-bottom:1px solid #2e2e33;">
               <td style="padding:0.3rem 0; color:#e0d6c8; font-weight:600;">Kind 4</td>
-              <td style="padding:0.3rem 0;">Direktnachrichten (E2E verschlüsselt)</td>
+              <td style="padding:0.3rem 0;">Direct messages (E2E encrypted)</td>
               <td style="padding:0.3rem 0;"><span class="tag green" style="margin:0">NIP-04</span></td>
             </tr>
             <tr style="border-bottom:1px solid #2e2e33;">
               <td style="padding:0.3rem 0; color:#e0d6c8; font-weight:600;">Kind 42</td>
-              <td style="padding:0.3rem 0;">Gruppennachrichten (Klartext)</td>
+              <td style="padding:0.3rem 0;">Group messages (plaintext)</td>
               <td style="padding:0.3rem 0;"><span class="tag red" style="margin:0">NIP-28</span></td>
             </tr>
             <tr>
               <td style="padding:0.3rem 0; color:#e0d6c8; font-weight:600;">Kind 10420</td>
-              <td style="padding:0.3rem 0;">Einladungscodes (SHA-256 Hash)</td>
+              <td style="padding:0.3rem 0;">Invite codes (SHA-256 hash)</td>
               <td style="padding:0.3rem 0;"><span class="tag" style="margin:0">Custom</span></td>
             </tr>
           </table>
         </div>
         <div class="box accent">
-          <div class="title">Subscriptions auf jedem Relay</div>
+          <div class="title">Subscriptions on each relay</div>
           <div style="font-family:monospace; font-size:0.68rem; color:#6a9955; margin-top:0.4rem; line-height:1.8;">
             REQ dm-sub &nbsp;{ kinds: [4], "#p": [myPubkey] }<br>
             REQ room-sub { kinds: [42], "#e": [roomHash...] }
           </div>
-          <div class="desc" style="margin-top:0.4rem;">DMs gefiltert nach eigenem pubkey. Rooms gefiltert nach Room-Hash.</div>
+          <div class="desc" style="margin-top:0.4rem;">DMs filtered by own pubkey. Rooms filtered by room hash.</div>
         </div>
       </div>
 
       <div>
-        <div style="font-size:0.78rem; font-weight:600; color:#e0d6c8; margin-bottom:0.5rem;">Verbundene Relays (7)</div>
+        <div style="font-size:0.78rem; font-weight:600; color:#e0d6c8; margin-bottom:0.5rem;">Connected Relays (7)</div>
         <div class="relay-grid">
           <div class="relay">wss://relay.damus.io</div>
           <div class="relay">wss://nos.lol</div>
@@ -279,7 +279,7 @@
           <div class="relay">wss://relay.primal.net</div>
           <div class="relay">wss://relay.nostr.bg</div>
         </div>
-        <div style="font-size:0.65rem; color:#5a5448; margin-top:0.5rem;">Auto-Reconnect mit exponentiellem Backoff (5s → 120s max). Relay-Status in Echtzeit in der Sidebar.</div>
+        <div style="font-size:0.65rem; color:#5a5448; margin-top:0.5rem;">Auto-reconnect with exponential backoff (5s → 120s max). Relay status shown in real-time in the sidebar.</div>
       </div>
     </div>
   </div>
@@ -288,37 +288,37 @@
   <div class="section">
     <div class="section-header">
       <span class="icon">🛡</span>
-      <span class="label">Sicherheit & Features</span>
+      <span class="label">Security & Features</span>
     </div>
     <div class="section-body">
       <div class="box green">
-        <div class="title">E2E-Verschlüsselung</div>
-        <div class="desc">NIP-04: ECDH-Schlüsselaustausch + AES-256-CBC. Privater Schlüssel verlässt nie das Gerät.</div>
+        <div class="title">E2E Encryption</div>
+        <div class="desc">NIP-04: ECDH key exchange + AES-256-CBC. Private key never leaves the device.</div>
         <span class="tag green">secp256k1</span><span class="tag green">AES-256</span>
       </div>
       <div class="box green">
-        <div class="title">Einladungscodes</div>
-        <div class="desc">6-stelliger Code → SHA-256-Hash auf Relay. 10 Min Gültigkeit. Relay sieht nie den Klartext-Code.</div>
+        <div class="title">Invite Codes</div>
+        <div class="desc">6-digit code → SHA-256 hash on relay. 10 min validity. Relay never sees the plaintext code.</div>
         <span class="tag green">SHA-256</span><span class="tag">10 min TTL</span>
       </div>
       <div class="box">
-        <div class="title">Selbstzerstörende Nachrichten</div>
-        <div class="desc">TTL-Feld im Message-Envelope. Countdown-Timer in der UI. Cleanup alle 1s per Interval.</div>
+        <div class="title">Self-Destructing Messages</div>
+        <div class="desc">TTL field in message envelope. Countdown timer in the UI. Cleanup every 1s via interval.</div>
         <span class="tag">30s / 5m / 1h</span>
       </div>
       <div class="box">
-        <div class="title">Bildkompression</div>
-        <div class="desc">Client-seitige Komprimierung. Max 500 KB als Base64 Data-URL direkt im verschlüsselten Payload.</div>
+        <div class="title">Image Compression</div>
+        <div class="desc">Client-side compression. Max 500 KB as Base64 data URL directly in the encrypted payload.</div>
         <span class="tag">max 500 KB</span>
       </div>
       <div class="box">
-        <div class="title">Offline-Warteschlange</div>
-        <div class="desc">Nachrichten bei Offline in localStorage gepuffert. Automatisches Flush bei Reconnect.</div>
+        <div class="title">Offline Queue</div>
+        <div class="desc">Messages buffered in localStorage when offline. Automatic flush on reconnect.</div>
         <span class="tag">localStorage</span>
       </div>
       <div class="box">
         <div class="title">PWA</div>
-        <div class="desc">Vite-Plugin-PWA (Workbox). CacheFirst für App-Shell. Installierbar auf iOS, Android, Desktop.</div>
+        <div class="desc">Vite-Plugin-PWA (Workbox). CacheFirst for app shell. Installable on iOS, Android, desktop.</div>
         <span class="tag">Service Worker</span>
       </div>
     </div>
@@ -328,46 +328,46 @@
   <div class="section">
     <div class="section-header">
       <span class="icon">🌍</span>
-      <span class="label">Übersetzungs-Pipeline</span>
+      <span class="label">Translation Pipeline</span>
     </div>
     <div class="section-body" style="flex-direction: column;">
       <div class="flow">
         <div class="flow-step">
           <div class="num">1</div>
-          <div class="flow-label">Cache prüfen</div>
-          <div class="flow-desc">djb2-Hash → localStorage Lookup</div>
+          <div class="flow-label">Check cache</div>
+          <div class="flow-desc">djb2 hash → localStorage lookup</div>
         </div>
         <div class="flow-step">
           <div class="num">2</div>
-          <div class="flow-label">Sprache erkennen</div>
-          <div class="flow-desc">Chrome AI Detector (offline) oder Script-Heuristik</div>
+          <div class="flow-label">Detect language</div>
+          <div class="flow-desc">Chrome AI Detector (offline) or script heuristic</div>
         </div>
         <div class="flow-step">
           <div class="num">3</div>
           <div class="flow-label">Chrome AI</div>
-          <div class="flow-desc">Lokal im Browser, offline, kein Datenleck</div>
+          <div class="flow-desc">Local in browser, offline, no data leak</div>
         </div>
         <div class="flow-step">
           <div class="num">4</div>
           <div class="flow-label">MyMemory Fallback</div>
-          <div class="flow-desc">Nur wenn erlaubt! Text wird extern gesendet.</div>
+          <div class="flow-desc">Only if permitted! Text is sent externally.</div>
         </div>
         <div class="flow-step">
           <div class="num">5</div>
-          <div class="flow-label">Cache speichern</div>
-          <div class="flow-desc">Ergebnis in localStorage für nächstes Mal</div>
+          <div class="flow-label">Save to cache</div>
+          <div class="flow-desc">Result stored in localStorage for next time</div>
         </div>
       </div>
       <div style="display:flex; gap:0.8rem; flex-wrap:wrap;">
         <div class="box green" style="flex:1;">
-          <div class="title">Chrome AI (Primär)</div>
-          <div class="desc">Komplett lokal. Kein Netzwerk nötig. Daten bleiben auf dem Gerät. Chrome 127+ erforderlich.</div>
-          <span class="tag green">Privat</span><span class="tag green">Offline</span>
+          <div class="title">Chrome AI (Primary)</div>
+          <div class="desc">Fully local. No network needed. Data stays on the device. Chrome 127+ required.</div>
+          <span class="tag green">Private</span><span class="tag green">Offline</span>
         </div>
         <div class="box warn" style="flex:1;">
           <div class="title">MyMemory API (Fallback)</div>
-          <div class="desc">Entschlüsselte Nachricht wird an externen Server gesendet. Schwächt E2E-Verschlüsselung. Nur wenn User explizit erlaubt.</div>
-          <span class="tag red">Extern</span><span class="tag red">Opt-in</span>
+          <div class="desc">Decrypted message is sent to external server. Weakens E2E encryption. Only if user explicitly allows it.</div>
+          <span class="tag red">External</span><span class="tag red">Opt-in</span>
         </div>
       </div>
     </div>
@@ -377,7 +377,7 @@
   <div class="section">
     <div class="section-header">
       <span class="icon">📦</span>
-      <span class="label">Tech-Stack</span>
+      <span class="label">Tech Stack</span>
     </div>
     <div class="section-body" style="justify-content: center;">
       <div class="box" style="text-align:center; flex: unset; min-width: unset; padding: 0.5rem 1rem;">
@@ -406,14 +406,14 @@
 
   <!-- Legend -->
   <div class="legend">
-    <div class="legend-item"><div class="legend-dot enc"></div> E2E verschlüsselt (lokal)</div>
-    <div class="legend-item"><div class="legend-dot plain"></div> Klartext / extern</div>
-    <div class="legend-item"><div class="legend-dot local"></div> Nostr-Protokoll</div>
-    <div class="legend-item"><div class="legend-dot ext"></div> Persistiert (localStorage)</div>
+    <div class="legend-item"><div class="legend-dot enc"></div> E2E encrypted (local)</div>
+    <div class="legend-item"><div class="legend-dot plain"></div> Plaintext / external</div>
+    <div class="legend-item"><div class="legend-dot local"></div> Nostr protocol</div>
+    <div class="legend-item"><div class="legend-dot ext"></div> Persisted (localStorage)</div>
   </div>
 
   <div style="text-align:center; margin-top:2rem; font-size:0.65rem; color:#3a3a3e; letter-spacing:0.08em;">
-    © 2026 Kay (__archon) Mühlenbruch · MIT License · Alina v2.0
+    © 2026 Kay (__archon) Muehlenbruch · MIT License · Alina v2.0
   </div>
 
 </div>

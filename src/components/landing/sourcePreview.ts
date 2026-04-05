@@ -2,18 +2,18 @@
 // This is a curated excerpt of the core Nostr logic
 
 export const SOURCE_PREVIEW = `// ──────────────────────────────────────────────
-// Alina — dezentraler Messenger
-// © 2026 Kay (__archon) Mühlenbruch
+// Alina — decentralised messenger
+// © 2026 Kay (__archon) Muehlenbruch
 // MIT License — https://opensource.org/licenses/MIT
-// Protokoll: Nostr (nostr-tools v2)
-// Verschlüsselung: NIP-04 (ECDH + AES)
-// Kein Server. Kein Account. Kein Eigentümer.
+// Protocol: Nostr (nostr-tools v2)
+// Encryption: NIP-04 (ECDH + AES)
+// No server. No account. No owner.
 // ──────────────────────────────────────────────
 
 import { nip04, nip19, generateSecretKey, getPublicKey,
          finalizeEvent, verifyEvent } from 'nostr-tools'
 
-// ── Relay-Verbindungen ──
+// ── Relay connections ──
 
 const RELAYS = [
   'wss://relay.damus.io',
@@ -40,7 +40,7 @@ export function connectAllRelays(): void {
   })
 }
 
-// ── Verschlüsselte DM senden (NIP-04) ──
+// ── Send encrypted DM (NIP-04) ──
 
 export async function publishDM(
   privkey: Uint8Array,
@@ -60,7 +60,7 @@ export async function publishDM(
   publishToRelays(event)
 }
 
-// ── Empfangene DM entschlüsseln ──
+// ── Decrypt incoming DM ──
 
 async function handleDM(event): Promise<void> {
   const fromPubkey = event.pubkey
