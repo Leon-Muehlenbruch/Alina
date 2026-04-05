@@ -210,7 +210,7 @@ export const translations = {
     'landing.philCaption': 'Why alina exists',
     'landing.philBody': 'alina was built so people can stay in touch with the people they know — regardless of whether a government, a company, or an algorithm decides who is allowed to talk to whom. No server that can be switched off. No owner that can be bought. Just people talking to each other.',
     // Landing - Footer
-    'landing.footerText': 'alina · v2.0 · © 2025 Kay (__archon) Muehlenbruch',
+    'landing.footerText': 'alina · v2.0 · © 2026 Kay (__archon) Muehlenbruch',
     'landing.footerLicense': 'MIT License · Open source',
   },
 
@@ -418,7 +418,7 @@ export const translations = {
     'landing.philCaption': 'Почему alina существует',
     'landing.philBody': 'alina создана, чтобы люди могли оставаться на связи с теми, кого знают — независимо от того, решает ли правительство, компания или алгоритм, кому с кем можно разговаривать. Нет сервера, который можно отключить. Нет владельца, которого можно купить. Просто люди разговаривают друг с другом.',
     // Landing - Footer
-    'landing.footerText': 'alina · v2.0 · © 2025 Kay (__archon) Muehlenbruch',
+    'landing.footerText': 'alina · v2.0 · © 2026 Kay (__archon) Muehlenbruch',
     'landing.footerLicense': 'Лицензия MIT · Открытый код',
   },
 } as const

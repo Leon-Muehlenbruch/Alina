@@ -160,7 +160,7 @@ export function SettingsModal() {
         </div>
 
         <div style={{ fontSize: '0.68rem', color: 'var(--muted)', textAlign: 'center', paddingTop: '0.5rem', letterSpacing: '0.05em' }}>
-          © 2025 Kay (__archon) Muehlenbruch · MIT License
+          © 2026 Kay (__archon) Muehlenbruch · MIT License
         </div>
 
         <div className="modal-actions" style={{ flexWrap: 'wrap', gap: '0.4rem' }}>

@@ -3,7 +3,7 @@
 
 export const SOURCE_PREVIEW = `// ──────────────────────────────────────────────
 // Alina — dezentraler Messenger
-// © 2025 Kay (__archon) Mühlenbruch
+// © 2026 Kay (__archon) Mühlenbruch
 // MIT License — https://opensource.org/licenses/MIT
 // Protokoll: Nostr (nostr-tools v2)
 // Verschlüsselung: NIP-04 (ECDH + AES)
