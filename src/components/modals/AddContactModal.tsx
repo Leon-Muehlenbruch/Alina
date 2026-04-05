@@ -5,7 +5,7 @@ import { useT } from '../../hooks/useT'
 import { publishInviteCode, lookupInviteCode, resubscribeAll } from '../../lib/nostr'
 import { INVITE_CODE_DURATION } from '../../lib/constants'
 
-type View = 'invite' | 'join'
+type View = 'choose' | 'invite' | 'join'
 type LookupState = 'idle' | 'searching' | 'found' | 'not_found'
 
 export function AddContactModal() {
@@ -15,7 +15,7 @@ export function AddContactModal() {
   const identity = useStore(s => s.identity)
   const t = useT()
 
-  const [view, setView] = useState<View>('invite')
+  const [view, setView] = useState<View>('choose')
 
   // Invite
   const [inviteName, setInviteName] = useState('')
@@ -110,12 +110,44 @@ export function AddContactModal() {
   const m = Math.floor(remaining / 60).toString().padStart(2, '0')
   const s = (remaining % 60).toString().padStart(2, '0')
 
+  // ── CHOOSE VIEW ──
+  if (view === 'choose') {
+    return (
+      <div className="modal-overlay open" onClick={e => e.target === e.currentTarget && close()}>
+        <div className="modal">
+          <div className="modal-title">{t('contact.inviteTitle')}</div>
+          <div className="modal-subtitle">{t('contact.inviteSubtitle')}</div>
+
+          <button
+            className="btn"
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '1rem' }}
+            onClick={() => setView('invite')}
+          >
+            <UserPlus size={18} />
+            {t('contact.createCode')}
+          </button>
+
+          <button
+            className="btn"
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '1rem', background: 'var(--surface2)', color: 'var(--text)', border: '2px solid var(--accent)' }}
+            onClick={() => setView('join')}
+          >
+            <KeyRound size={18} />
+            {t('contact.enterCode')}
+          </button>
+
+          <button className="btn secondary" style={{ width: '100%' }} onClick={close}>{t('contact.close')}</button>
+        </div>
+      </div>
+    )
+  }
+
   // ── JOIN VIEW ──
   if (view === 'join') {
     return (
       <div className="modal-overlay open" onClick={e => e.target === e.currentTarget && close()}>
         <div className="modal">
-          <button className="modal-back-btn" onClick={() => { setView('invite'); resetJoin() }}>
+          <button className="modal-back-btn" onClick={() => { setView('choose'); resetJoin() }}>
             <ArrowLeft size={15} /> {t('contact.back')}
           </button>
 
@@ -200,6 +232,9 @@ export function AddContactModal() {
   return (
     <div className="modal-overlay open" onClick={e => e.target === e.currentTarget && close()}>
       <div className="modal">
+        <button className="modal-back-btn" onClick={() => { setView('choose'); setCode(null); setInviteName('') }}>
+          <ArrowLeft size={15} /> {t('contact.back')}
+        </button>
         <div className="modal-title">{t('contact.inviteTitle')}</div>
         <div className="modal-subtitle">{t('contact.inviteSubtitle')}</div>
 
@@ -262,17 +297,6 @@ export function AddContactModal() {
             </div>
           </>
         )}
-
-        <div style={{ borderTop: '1px solid var(--border)', paddingTop: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
-          <KeyRound size={14} style={{ color: 'var(--muted)' }} />
-          <span style={{ fontSize: '0.82rem', color: 'var(--muted)' }}>{t('contact.haveCode')}</span>
-          <button
-            onClick={() => setView('join')}
-            style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '0.82rem', fontFamily: 'var(--font-body)', textDecoration: 'underline' }}
-          >
-            {t('contact.enterHere')}
-          </button>
-        </div>
 
         <button className="btn secondary" style={{ width: '100%' }} onClick={close}>{t('contact.close')}</button>
       </div>
