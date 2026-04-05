@@ -448,6 +448,51 @@ input[type="text"]:focus { border-color: var(--accent); }
 }
 .chat-empty-state p { font-size: 0.85rem; }
 
+/* Onboarding Guide */
+.onboarding-guide {
+  width: 100%;
+  max-width: 340px;
+  border-top: 1px solid var(--border);
+  padding-top: 1.2rem;
+}
+.onboarding-title {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.8rem;
+  padding: 0 0.2rem;
+}
+.onboarding-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.6rem 0.2rem;
+}
+.onboarding-icon {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 8px;
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+}
+.onboarding-step-title {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 0.1rem;
+}
+.onboarding-step-desc {
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
 .chat-header {
   padding: 1rem 1.4rem;
   border-bottom: 1px solid var(--border);

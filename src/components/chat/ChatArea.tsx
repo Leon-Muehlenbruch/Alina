@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { MessageCirclePlus, Users, Menu } from 'lucide-react'
+import { MessageCirclePlus, Users, Menu, UserPlus, KeyRound, Hash, Download, ArrowRight } from 'lucide-react'
 import { useStore } from '../../store/useStore'
 import { useT } from '../../hooks/useT'
 import { ChatHeader } from './ChatHeader'
@@ -19,6 +19,14 @@ export function ChatArea() {
     if (!activeChat) setSidebarOpen(true)
   }, [activeChat, setSidebarOpen])
 
+  const guideSteps = [
+    { icon: <UserPlus size={18} />, title: t('chat.guide1Title'), desc: t('chat.guide1Desc') },
+    { icon: <ArrowRight size={18} />, title: t('chat.guide2Title'), desc: t('chat.guide2Desc') },
+    { icon: <Hash size={18} />, title: t('chat.guide3Title'), desc: t('chat.guide3Desc') },
+    { icon: <KeyRound size={18} />, title: t('chat.guide4Title'), desc: t('chat.guide4Desc') },
+    { icon: <Download size={18} />, title: t('chat.guide5Title'), desc: t('chat.guide5Desc') },
+  ]
+
   if (!activeChat) {
     return (
       <div className="chat-area">
@@ -31,17 +39,16 @@ export function ChatArea() {
             <Menu size={22} />
             <span>{t('chat.openSidebar')}</span>
           </button>
-          <img src="/logo-icon.svg" alt="alina" style={{ width: 72, height: 72, marginBottom: '0.2rem', flexShrink: 0 }} />
-          <div style={{ fontFamily: "'Jost', sans-serif", fontWeight: 200, fontSize: '3.5rem', color: 'var(--border)', letterSpacing: '0.1em', marginBottom: '1rem' }}>
+          <img src="/logo-icon.svg" alt="alina" style={{ width: 56, height: 56, marginBottom: '0.1rem', flexShrink: 0 }} />
+          <div style={{ fontFamily: "'Jost', sans-serif", fontWeight: 200, fontSize: '2.8rem', color: 'var(--border)', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>
             alina
           </div>
-          <p style={{ fontSize: '1rem', color: 'var(--muted)', marginBottom: '0.3rem', fontWeight: 500 }}>
+          <p style={{ fontSize: '0.9rem', color: 'var(--muted)', marginBottom: '0.2rem', fontWeight: 500 }}>
             {t('chat.tagline')}
           </p>
-          <p style={{ fontSize: '0.82rem', color: 'var(--border)', marginBottom: '2rem' }}>
-            {t('chat.noAccount')}
-          </p>
-          <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+
+          {/* Action buttons */}
+          <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '1.5rem', marginTop: '0.8rem' }}>
             <button
               className="btn"
               style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
@@ -56,6 +63,20 @@ export function ChatArea() {
             >
               <Users size={16} /> {t('chat.createGroup')}
             </button>
+          </div>
+
+          {/* Guide */}
+          <div className="onboarding-guide">
+            <div className="onboarding-title">{t('chat.guideTitle')}</div>
+            {guideSteps.map((step, i) => (
+              <div key={i} className="onboarding-step">
+                <div className="onboarding-icon">{step.icon}</div>
+                <div>
+                  <div className="onboarding-step-title">{step.title}</div>
+                  <div className="onboarding-step-desc">{step.desc}</div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
