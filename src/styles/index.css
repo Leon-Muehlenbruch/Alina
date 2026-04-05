@@ -432,6 +432,9 @@ input[type="text"]:focus { border-color: var(--accent); }
   justify-content: center;
   color: var(--muted);
   gap: 0.8rem;
+  overflow: auto;
+  padding: 2rem 1rem;
+  min-height: 0;
 }
 .chat-empty-state .big-logo {
   font-family: var(--font-display);

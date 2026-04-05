@@ -31,7 +31,7 @@ export function ChatArea() {
             <Menu size={22} />
             <span>{t('chat.openSidebar')}</span>
           </button>
-          <img src="/logo.svg" alt="alina" style={{ width: 90, height: 90, marginBottom: '0.5rem' }} />
+          <img src="/logo.svg" alt="alina" style={{ width: 72, height: 72, marginBottom: '0.2rem', flexShrink: 0 }} />
           <div style={{ fontFamily: "'Jost', sans-serif", fontWeight: 200, fontSize: '3.5rem', color: 'var(--border)', letterSpacing: '0.1em', marginBottom: '1rem' }}>
             alina
           </div>
