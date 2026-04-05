@@ -194,7 +194,7 @@ input[type="text"]:focus { border-color: var(--accent); }
 }
 
 /* ── MAIN APP ── */
-#screen-app { flex-direction: row; height: 100vh; }
+#screen-app { flex-direction: row; height: 100vh; height: 100dvh; }
 
 /* ── SIDEBAR ── */
 .sidebar {
@@ -567,12 +567,14 @@ input[type="text"]:focus { border-color: var(--accent); }
 /* ── INPUT BAR ── */
 .chat-input-bar {
   padding: 0.8rem 1.2rem;
+  padding-bottom: calc(0.8rem + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid var(--border);
   background: var(--surface);
   display: flex;
   align-items: flex-end;
   gap: 0.6rem;
   position: relative;
+  flex-shrink: 0;
 }
 
 .input-wrapper {
