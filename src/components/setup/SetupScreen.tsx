@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { KeyRound } from 'lucide-react'
 import { useStore } from '../../store/useStore'
 import { useT } from '../../hooks/useT'
-import { lookupInviteCode, resubscribeAll } from '../../lib/nostr'
+import { lookupInviteCode, resubscribeAll, connectAllRelays, disconnectAllRelays } from '../../lib/nostr'
 import type { Lang } from '../../lib/i18n'
 
 const LANGS: { code: Lang; label: string }[] = [
@@ -32,6 +32,14 @@ export function SetupScreen() {
   const [myName, setMyName] = useState('')
   const [lookupState, setLookupState] = useState<LookupState>('idle')
   const [lookupDone, setLookupDone] = useState(false)
+
+  // Connect relays when invite flow is opened (no identity yet → relays not connected)
+  useEffect(() => {
+    if (showInvite) {
+      connectAllRelays()
+      return () => { disconnectAllRelays() }
+    }
+  }, [showInvite])
 
   const handleCreate = () => {
     if (!setupName.trim()) { alert(t('setup.errorName')); return }
