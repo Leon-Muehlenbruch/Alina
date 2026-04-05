@@ -190,7 +190,7 @@ export const translations = {
     'landing.viewSource': 'View source',
     'landing.scrollHint': 'Learn more',
     // Landing - Promises
-    'landing.promisesEyebrow': 'Three promises',
+    'landing.promisesEyebrow': 'Four promises',
     'landing.promisesTitle': 'Built on',
     'landing.promisesTitleEm': 'trust.',
     'landing.promise1Title': 'No owner.',
@@ -430,7 +430,7 @@ export const translations = {
     'landing.viewSource': 'Исходный код',
     'landing.scrollHint': 'Узнать больше',
     // Landing - Promises
-    'landing.promisesEyebrow': 'Три обещания',
+    'landing.promisesEyebrow': 'Четыре обещания',
     'landing.promisesTitle': 'Построено на',
     'landing.promisesTitleEm': 'доверии.',
     'landing.promise1Title': 'Нет владельца.',
