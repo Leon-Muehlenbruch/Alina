@@ -3,7 +3,7 @@ export type Lang = 'en' | 'ru'
 export const translations = {
   en: {
     // Setup
-    'setup.tagline': 'Secure · Decentralised · Yours',
+    'setup.tagline': 'Secure · Decentralised · No Bots',
     'setup.nameLabel': 'Your name',
     'setup.namePlaceholder': 'e.g. Kay',
     'setup.keyWarning': 'A key pair will be generated for you. Nobody but you knows your private key. Write it down — lose it and you lose your account.',
@@ -36,7 +36,7 @@ export const translations = {
     'settings.save': 'Save',
     'settings.language': 'Language',
     // Chat area
-    'chat.tagline': 'Secure. Decentralised. Yours.',
+    'chat.tagline': 'Secure. Decentralised. No Bots.',
     'chat.noAccount': 'No ads. No server. No account needed.',
     'chat.openSidebar': 'Open chats',
     'chat.inviteSomeone': 'Invite someone',
@@ -216,7 +216,7 @@ export const translations = {
 
   ru: {
     // Setup
-    'setup.tagline': 'Безопасно · Децентрализованно · Твоё',
+    'setup.tagline': 'Безопасно · Децентрализованно · Без ботов',
     'setup.nameLabel': 'Твоё имя',
     'setup.namePlaceholder': 'напр. Алина',
     'setup.keyWarning': 'Для тебя будет создана пара ключей. Только ты знаешь свой приватный ключ. Запиши его — потеряешь ключ, потеряешь аккаунт.',
@@ -248,7 +248,7 @@ export const translations = {
     'settings.save': 'Сохранить',
     'settings.language': 'Язык',
     // Chat area
-    'chat.tagline': 'Безопасно. Децентрализованно. Твоё.',
+    'chat.tagline': 'Безопасно. Децентрализованно. Без ботов.',
     'chat.noAccount': 'Без рекламы. Без сервера. Без аккаунта.',
     'chat.openSidebar': 'Открыть чаты',
     'chat.inviteSomeone': 'Пригласить',
