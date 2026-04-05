@@ -23,6 +23,7 @@ export const translations = {
     'setup.inviteFrom': 'Invitation from',
     'setup.yourName': 'Your name',
     'setup.joinBtn': 'Join & start chatting',
+    'setup.hurra': 'Hurra!',
     // Settings
     'settings.title': 'Settings',
     'settings.nameLabel': 'Your name',
@@ -244,6 +245,7 @@ export const translations = {
     'setup.inviteFrom': 'Приглашение от',
     'setup.yourName': 'Твоё имя',
     'setup.joinBtn': 'Присоединиться',
+    'setup.hurra': 'Ура!',
     // Settings
     'settings.title': 'Настройки',
     'settings.nameLabel': 'Твоё имя',

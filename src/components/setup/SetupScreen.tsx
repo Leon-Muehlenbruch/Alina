@@ -190,7 +190,7 @@ export function SetupScreen() {
               style={{ width: '100%', fontSize: '0.82rem' }}
               onClick={() => { setShowInvite(false); resetInvite() }}
             >
-              Hurra!
+              {t('setup.hurra')}
             </button>
           </div>
         ) : (
