@@ -129,7 +129,7 @@ export function SetupScreen() {
               <input
                 type="text"
                 inputMode="numeric"
-                placeholder={t('setup.codePlaceholder')}
+                placeholder="000000"
                 maxLength={6}
                 value={joinCode}
                 onChange={e => {
@@ -190,7 +190,7 @@ export function SetupScreen() {
               style={{ width: '100%', fontSize: '0.82rem' }}
               onClick={() => { setShowInvite(false); resetInvite() }}
             >
-              {t('contact.back')}
+              Hurra!
             </button>
           </div>
         ) : (
