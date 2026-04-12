@@ -32,20 +32,17 @@ export function Sidebar() {
   return (
     <div className={`sidebar${sidebarOpen ? ' open' : ''}`} id="sidebar">
       <div className="sidebar-header">
-        <span className="sidebar-logo">
-          alina
-          <span
-            title={t('sidebar.relays', { n: String(relayCount), total: String(total) })}
-            aria-label={t('sidebar.relays', { n: String(relayCount), total: String(total) })}
-            role="status"
-            style={{
-              display: 'inline-block', width: 7, height: 7, borderRadius: '50%',
-              background: dotColor, marginLeft: '0.4rem', verticalAlign: 'middle',
-              boxShadow: relayCount > 0 ? `0 0 4px ${dotColor}` : 'none',
-            }}
-          />
-          <span className="sr-only">{t('sidebar.relays', { n: String(relayCount), total: String(total) })}</span>
-        </span>
+        <span
+          title={t('sidebar.relays', { n: String(relayCount), total: String(total) })}
+          aria-label={t('sidebar.relays', { n: String(relayCount), total: String(total) })}
+          role="status"
+          style={{
+            display: 'inline-block', width: 7, height: 7, borderRadius: '50%',
+            background: dotColor,
+            boxShadow: relayCount > 0 ? `0 0 4px ${dotColor}` : 'none',
+          }}
+        />
+        <span className="sr-only">{t('sidebar.relays', { n: String(relayCount), total: String(total) })}</span>
         {installAvailable && (
           <button
             className="btn icon-btn"
