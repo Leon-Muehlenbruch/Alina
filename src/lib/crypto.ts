@@ -8,6 +8,7 @@ import {
   nip44,
 } from 'nostr-tools'
 import type { UnsignedEvent, VerifiedEvent } from 'nostr-tools'
+import { SEAL_KIND, GIFT_WRAP_KIND, KEY_MIGRATION_KIND } from './constants'
 
 export { nip19 }
 
@@ -43,7 +44,7 @@ export function createSeal(
   const rumorJson = JSON.stringify(rumor)
   const encrypted = nip44Encrypt(senderPrivkey, recipientPubkey, rumorJson)
   return finalizeEvent({
-    kind: 13,
+    kind: SEAL_KIND,
     created_at: randomTimestamp(),
     tags: [],
     content: encrypted,
@@ -56,11 +57,10 @@ export function createGiftWrap(
   seal: VerifiedEvent,
 ): VerifiedEvent {
   const ephemeralPrivkey = generateSecretKey()
-  const ephemeralPubkey = getPublicKey(ephemeralPrivkey)
   const sealJson = JSON.stringify(seal)
   const encrypted = nip44Encrypt(ephemeralPrivkey, recipientPubkey, sealJson)
   return finalizeEvent({
-    kind: 1059,
+    kind: GIFT_WRAP_KIND,
     created_at: randomTimestamp(),
     tags: [['p', recipientPubkey]],
     content: encrypted,
@@ -75,7 +75,7 @@ export function unwrapGiftWrap(
   try {
     const sealJson = nip44Decrypt(recipientPrivkey, giftWrap.pubkey, giftWrap.content)
     const seal = JSON.parse(sealJson) as VerifiedEvent
-    if (seal.kind !== 13) return null
+    if (seal.kind !== SEAL_KIND) return null
     if (!verifyEvent(seal)) return null
     return seal
   } catch { return null }
@@ -92,10 +92,12 @@ export function unsealRumor(
   } catch { return null }
 }
 
-/** Randomize timestamp ±48h to hide metadata */
+/** Randomize timestamp ±48h to hide metadata (uses crypto PRNG) */
 function randomTimestamp(): number {
   const now = Math.floor(Date.now() / 1000)
-  const jitter = Math.floor(Math.random() * 172800) - 86400 // ±24h
+  const arr = new Uint32Array(1)
+  crypto.getRandomValues(arr)
+  const jitter = (arr[0] % 172800) - 86400 // ±24h with crypto PRNG
   return now + jitter
 }
 
@@ -162,6 +164,88 @@ export async function hashRoomName(name: string): Promise<string> {
   const hashBuffer = await crypto.subtle.digest('SHA-256', data)
   const hashArray = Array.from(new Uint8Array(hashBuffer))
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+// ── Key Migration ────────────────────────────────────────────────────────────
+
+/**
+ * Create a cross-signature proving ownership of a new key.
+ * The new key signs the old pubkey, and the old key signs the new pubkey.
+ */
+export function createCrossSignature(
+  newPrivkey: Uint8Array,
+  oldPubkey: string,
+): string {
+  // New key signs: "migrate:<old_pubkey>:<timestamp>"
+  const ts = Math.floor(Date.now() / 1000)
+  const message = `migrate:${oldPubkey}:${ts}`
+  const event = finalizeEvent({
+    kind: KEY_MIGRATION_KIND,
+    created_at: ts,
+    tags: [['proof', oldPubkey]],
+    content: message,
+  }, newPrivkey) as VerifiedEvent
+  return JSON.stringify(event)
+}
+
+/**
+ * Create a key migration event signed by the OLD key.
+ * Contains the new pubkey + cross-signature from the new key.
+ */
+export function createMigrationEvent(
+  oldPrivkey: Uint8Array,
+  oldPubkey: string,
+  newPubkey: string,
+  crossSignature: string,
+): VerifiedEvent {
+  return finalizeEvent({
+    kind: KEY_MIGRATION_KIND,
+    created_at: Math.floor(Date.now() / 1000),
+    tags: [
+      ['p', newPubkey],
+      ['alt', 'Key migration event'],
+    ],
+    content: JSON.stringify({
+      newPubkey,
+      crossSignature,
+      message: 'This identity has migrated to a new key.',
+    }),
+  }, oldPrivkey) as VerifiedEvent
+}
+
+/**
+ * Verify a key migration event.
+ * Checks: old key signature is valid, cross-signature from new key is valid.
+ */
+export function verifyMigrationEvent(
+  event: { pubkey: string; content: string; kind: number },
+): { valid: boolean; oldPubkey: string; newPubkey: string } | null {
+  try {
+    if (event.kind !== KEY_MIGRATION_KIND) return null
+
+    const payload = JSON.parse(event.content)
+    const { newPubkey, crossSignature } = payload
+    if (!newPubkey || !crossSignature) return null
+
+    // Verify the cross-signature (signed by new key)
+    const proofEvent = JSON.parse(crossSignature)
+    if (!verifyEvent(proofEvent)) return null
+
+    // Check that the proof was signed by the claimed new key
+    if (proofEvent.pubkey !== newPubkey) return null
+
+    // Check that the proof references the old key
+    const proofTag = proofEvent.tags?.find((t: string[]) => t[0] === 'proof')
+    if (!proofTag || proofTag[1] !== event.pubkey) return null
+
+    return {
+      valid: true,
+      oldPubkey: event.pubkey,
+      newPubkey,
+    }
+  } catch {
+    return null
+  }
 }
 
 export async function hashInviteCode(code: string): Promise<string> {

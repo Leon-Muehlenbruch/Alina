@@ -1,6 +1,9 @@
-import { RELAYS, INVITE_KIND, INVITE_CODE_DURATION, GIFT_WRAP_KIND, CHAT_MESSAGE_KIND, ROOM_PRESENCE_KIND } from './constants'
-import { createSignedEvent, isValidEvent, encryptDM, decryptDM, hashInviteCode, createSeal, createGiftWrap, unwrapGiftWrap, unsealRumor } from './crypto'
+import { RELAYS, INVITE_KIND, INVITE_CODE_DURATION, GIFT_WRAP_KIND, CHAT_MESSAGE_KIND, ROOM_PRESENCE_KIND, KEY_MIGRATION_KIND, WEBRTC_SIGNAL_KIND } from './constants'
+import { createSignedEvent, isValidEvent, encryptDM, decryptDM, hashInviteCode, createSeal, createGiftWrap, unwrapGiftWrap, unsealRumor, createKeyPair, createCrossSignature, createMigrationEvent, verifyMigrationEvent } from './crypto'
 import { saveLog } from './storage'
+import { handleSignalingEvent } from './webrtc/SignalingChannel'
+import { sendViaPeer, isPeerConnected } from './webrtc/PeerManager'
+import type { DataMessage } from './webrtc/types'
 import type { Message } from '../store/useStore'
 
 const BASE_RECONNECT_DELAY = 5000
@@ -64,6 +67,17 @@ function subscribeAll(ws: WebSocket): void {
   // Subscribe to Gift Wraps directed to me (NIP-17 encrypted room messages)
   const gwSub = JSON.stringify(['REQ', 'gw-sub', { kinds: [GIFT_WRAP_KIND], '#p': [state.pubkey], limit: 200 }])
   ws.send(gwSub)
+
+  // Subscribe to WebRTC signaling events directed to me (ephemeral)
+  const sigSub = JSON.stringify(['REQ', 'sig-sub', { kinds: [WEBRTC_SIGNAL_KIND], '#p': [state.pubkey], limit: 20, since: Math.floor(Date.now() / 1000) - 60 }])
+  ws.send(sigSub)
+
+  // Subscribe to key migration events from known contacts
+  const contactPubkeys = Object.keys(state.contacts)
+  if (contactPubkeys.length) {
+    const migSub = JSON.stringify(['REQ', 'mig-sub', { kinds: [KEY_MIGRATION_KIND], authors: contactPubkeys, limit: 50 }])
+    ws.send(migSub)
+  }
 
   // Subscribe to room presence/join events (Kind 42 - non-sensitive, just pubkey announcements)
   const roomHashes = Object.values(state.rooms).map(r => r.hash)
@@ -172,12 +186,22 @@ async function handleRelayMessage(raw: string): Promise<void> {
         return
       }
 
+      if (event.kind === WEBRTC_SIGNAL_KIND) {
+        const state = getStateCallback?.()
+        if (state?.privkey && state.pubkey) {
+          await handleSignalingEvent(state.privkey, state.pubkey, event)
+        }
+        return
+      }
+
       if (!isValidEvent(event)) return
 
       if (event.kind === 4) {
         await handleDM(event)
       } else if (event.kind === ROOM_PRESENCE_KIND) {
         handleRoomPresence(event)
+      } else if (event.kind === KEY_MIGRATION_KIND) {
+        handleMigrationEvent(event)
       }
     }
   } catch (e) {
@@ -196,7 +220,9 @@ async function handleDM(event: { id?: string; pubkey: string; content: string; c
 
   try {
     const decrypted = await decryptDM(state.privkey, fromPubkey, event.content)
+    if (decrypted.length > 1_000_000) return // reject oversized payloads (1MB max)
     const parsed = JSON.parse(decrypted)
+    if (!parsed.content || typeof parsed.content !== 'string') return // validate structure
     const now = Date.now()
     const ttl = parsed.ttl ? Number(parsed.ttl) : undefined
     const expiresAt = ttl ? now + ttl * 1000 : undefined
@@ -212,7 +238,7 @@ async function handleDM(event: { id?: string; pubkey: string; content: string; c
     }
     onMessageCallback?.(chatId, msg)
   } catch (e) {
-    saveLog('decrypt-error', 'Failed to decrypt DM from ' + fromPubkey.slice(0, 8) + '...: ' + String(e))
+    saveLog('decrypt-error', 'Failed to decrypt DM')
   }
 }
 
@@ -260,8 +286,10 @@ async function handleGiftWrap(event: { id?: string; pubkey: string; content: str
     // Learn this member
     state.addRoomMember(roomHash, senderPubkey)
 
-    // Step 4: Parse message content
+    // Step 4: Parse message content (with size/structure validation)
+    if (rumor.content.length > 1_000_000) return // reject oversized payloads
     const parsed = JSON.parse(rumor.content)
+    if (!parsed.content || typeof parsed.content !== 'string') return
     const now = Date.now()
     const ttl = parsed.ttl ? Number(parsed.ttl) : undefined
     const expiresAt = ttl ? now + ttl * 1000 : undefined
@@ -283,7 +311,7 @@ async function handleGiftWrap(event: { id?: string; pubkey: string; content: str
     }
     onMessageCallback?.(chatId, msg)
   } catch (e) {
-    saveLog('giftwrap-error', 'Failed to unwrap gift wrap: ' + String(e))
+    saveLog('giftwrap-error', 'Failed to unwrap gift wrap')
   }
 }
 
@@ -293,6 +321,23 @@ export async function publishDM(
   recipientPubkey: string,
   msgData: { type: string; content: string },
 ): Promise<void> {
+  // Try P2P first — skip relay if data channel is open
+  if (isPeerConnected(recipientPubkey)) {
+    const p2pMsg: DataMessage = {
+      chatId: 'dm:' + myPubkey, // From sender's perspective, recipient sees dm:<senderPubkey>
+      msgData,
+      ts: Date.now(),
+    }
+    const sent = sendViaPeer(recipientPubkey, p2pMsg)
+    if (sent) {
+      saveLog('webrtc', `DM sent via P2P to ${recipientPubkey.slice(0, 8)}...`)
+      return
+    }
+    // P2P failed — fall through to relay
+    saveLog('webrtc', `P2P send failed, falling back to relay for ${recipientPubkey.slice(0, 8)}...`)
+  }
+
+  // Relay fallback
   const payload = JSON.stringify(msgData)
   const encrypted = await encryptDM(privkey, recipientPubkey, payload)
   const event = createSignedEvent({
@@ -390,12 +435,99 @@ export async function publishRoomMessage(
       const giftWrap = createGiftWrap(memberPubkey, seal)
       publishToRelays(giftWrap)
     } catch (e) {
-      saveLog('giftwrap-error', 'Failed to wrap for ' + memberPubkey.slice(0, 8) + '...: ' + String(e))
+      saveLog('giftwrap-error', 'Failed to wrap for room member')
     }
   }
 
   // Also publish a presence event so new members can discover us
   publishRoomPresence(privkey, myPubkey, roomHash, msgData.name)
+}
+
+// ── Key Migration ────────────────────────────────────────────────────────────
+
+/**
+ * Perform a full key rotation:
+ * 1. Generate new key pair
+ * 2. Create cross-signature (new key signs old pubkey)
+ * 3. Create migration event (old key signs, contains new pubkey + proof)
+ * 4. Publish migration event to all relays
+ * 5. Notify all contacts via encrypted DM
+ *
+ * Returns the new key pair for the caller to update identity.
+ */
+export async function performKeyMigration(
+  oldPrivkey: Uint8Array,
+  oldPubkey: string,
+  contacts: Record<string, { pubkey: string; name: string }>,
+  myName: string,
+): Promise<{ privkey: Uint8Array; pubkey: string }> {
+  // Step 1: Generate new key pair
+  const newKeyPair = createKeyPair()
+
+  // Step 2: Cross-signature (new key proves it controls migration)
+  const crossSig = createCrossSignature(newKeyPair.privkey, oldPubkey)
+
+  // Step 3: Migration event (signed by old key)
+  const migrationEvent = createMigrationEvent(
+    oldPrivkey,
+    oldPubkey,
+    newKeyPair.pubkey,
+    crossSig,
+  )
+
+  // Step 4: Publish migration event to all relays
+  publishToRelays(migrationEvent)
+
+  // Step 5: Notify all contacts via encrypted DM from old key
+  const notification = JSON.stringify({
+    type: 'text',
+    content: `[Key Migration] ${myName} has rotated their key. New public key: ${newKeyPair.pubkey.slice(0, 16)}... Please verify via QR code or fingerprint comparison.`,
+  })
+
+  for (const contact of Object.values(contacts)) {
+    try {
+      const encrypted = await encryptDM(oldPrivkey, contact.pubkey, notification)
+      const event = createSignedEvent({
+        kind: 4,
+        created_at: Math.floor(Date.now() / 1000),
+        tags: [['p', contact.pubkey]],
+        content: encrypted,
+        pubkey: oldPubkey,
+      }, oldPrivkey)
+      publishToRelays(event)
+    } catch (e) {
+      saveLog('migration-error', `Failed to notify contact ${contact.pubkey.slice(0, 8)}`)
+    }
+  }
+
+  saveLog('migration', `Key migration published. New pubkey: ${newKeyPair.pubkey.slice(0, 16)}...`)
+
+  return newKeyPair
+}
+
+/**
+ * Subscribe to key migration events for known contacts.
+ * Calls the handler when a migration event is received and verified.
+ */
+let onMigrationCallback: ((oldPubkey: string, newPubkey: string) => void) | null = null
+
+export function setOnMigration(cb: typeof onMigrationCallback): void {
+  onMigrationCallback = cb
+}
+
+/** Handle incoming migration events */
+export function handleMigrationEvent(event: { pubkey: string; content: string; kind: number }): void {
+  const result = verifyMigrationEvent(event)
+  if (!result || !result.valid) return
+
+  const state = getStateCallback?.()
+  if (!state) return
+
+  // Only process migrations from known contacts
+  if (!state.contacts[result.oldPubkey]) return
+
+  saveLog('migration', `Received valid key migration from ${result.oldPubkey.slice(0, 8)}... to ${result.newPubkey.slice(0, 8)}...`)
+  onMigrationCallback?.(result.oldPubkey, result.newPubkey)
 }
 
 /** Publish a Kind 42 presence event (non-sensitive join/activity announcement) */

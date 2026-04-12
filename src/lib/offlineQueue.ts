@@ -1,4 +1,4 @@
-import { saveLog } from './storage'
+import { saveLog, loadOfflineQueue, saveOfflineQueue } from './storage'
 
 export interface QueuedMessage {
   id: string
@@ -9,11 +9,11 @@ export interface QueuedMessage {
   timestamp: number
 }
 
-const QUEUE_KEY = 'alina_offline_queue'
-
 function loadQueue(): QueuedMessage[] {
   try {
-    return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]')
+    const raw = loadOfflineQueue()
+    if (!raw) return []
+    return JSON.parse(raw)
   } catch {
     return []
   }
@@ -21,11 +21,12 @@ function loadQueue(): QueuedMessage[] {
 
 function saveQueue(queue: QueuedMessage[]): void {
   try {
-    localStorage.setItem(QUEUE_KEY, JSON.stringify(queue))
+    saveOfflineQueue(JSON.stringify(queue))
   } catch (e) {
     saveLog('storage-error', `Failed to save offline queue: ${String(e)}`)
   }
 }
+
 export function enqueue(msg: QueuedMessage): void {
   const queue = loadQueue()
   queue.push(msg)
@@ -42,10 +43,6 @@ export function getQueuedMessages(): QueuedMessage[] {
   return loadQueue()
 }
 
-export function clearQueue(): void {
-  localStorage.removeItem(QUEUE_KEY)
-}
-
 export function isOnline(): boolean {
   return navigator.onLine
 }
@@ -55,6 +52,7 @@ let flushCallback: ((msg: QueuedMessage) => Promise<void>) | null = null
 export function setFlushCallback(cb: typeof flushCallback): void {
   flushCallback = cb
 }
+
 export async function flushQueue(): Promise<void> {
   if (!flushCallback) return
   const queue = getQueuedMessages()

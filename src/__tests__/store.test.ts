@@ -114,7 +114,7 @@ describe('useStore', () => {
   describe('rooms', () => {
     it('should add a room', () => {
       useStore.getState().addRoom('hash123', 'General')
-      expect(useStore.getState().rooms['hash123']).toEqual({ name: 'General', hash: 'hash123' })
+      expect(useStore.getState().rooms['hash123']).toEqual({ name: 'General', hash: 'hash123', members: [] })
     })
   })
 

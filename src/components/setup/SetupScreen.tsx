@@ -3,26 +3,24 @@ import { KeyRound } from 'lucide-react'
 import { useStore } from '../../store/useStore'
 import { useT } from '../../hooks/useT'
 import { lookupInviteCode, resubscribeAll, connectAllRelays, disconnectAllRelays } from '../../lib/nostr'
-import type { Lang } from '../../lib/i18n'
-
-const LANGS: { code: Lang; label: string }[] = [
-  { code: 'en', label: 'EN' },
-  { code: 'ru', label: 'RU' },
-]
+import { LanguageToggle } from '../ui/LanguageToggle'
 
 type LookupState = 'idle' | 'searching' | 'found' | 'not_found'
 
-export function SetupScreen() {
+interface SetupScreenProps {
+  onIdentityCreated?: () => void
+}
+
+export function SetupScreen({ onIdentityCreated }: SetupScreenProps = {}) {
   const createIdentity = useStore(s => s.createIdentity)
   const importIdentity = useStore(s => s.importIdentity)
   const addContact = useStore(s => s.addContact)
-  const lang = useStore(s => s.lang)
-  const setLang = useStore(s => s.setLang)
   const t = useT()
 
   const [setupName, setSetupName] = useState('')
   const [importKey, setImportKey] = useState('')
   const [importName, setImportName] = useState('')
+  const [showImport, setShowImport] = useState(false)
 
   // Invite code flow
   const [showInvite, setShowInvite] = useState(false)
@@ -44,6 +42,7 @@ export function SetupScreen() {
   const handleCreate = () => {
     if (!setupName.trim()) { alert(t('setup.errorName')); return }
     createIdentity(setupName.trim())
+    onIdentityCreated?.()
   }
 
   const handleImport = () => {
@@ -53,6 +52,7 @@ export function SetupScreen() {
     }
     try {
       importIdentity(importKey.trim(), importName.trim())
+      onIdentityCreated?.()
     } catch {
       alert(t('setup.errorKey'))
     }
@@ -84,6 +84,7 @@ export function SetupScreen() {
       addContact(inviterPubkey, inviterName)
       resubscribeAll()
     }, 100)
+    onIdentityCreated?.()
   }
 
   const resetInvite = () => {
@@ -102,26 +103,8 @@ export function SetupScreen() {
           <img src="/logo-icon.svg" alt="Alina" className="setup-logo-img" />
           <div className="logo-name">alina</div>
           <div className="logo-tagline">{t('setup.tagline')}</div>
-          <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.8rem', justifyContent: 'center' }}>
-            {LANGS.map(l => (
-              <button
-                key={l.code}
-                onClick={() => setLang(l.code)}
-                style={{
-                  padding: '0.25rem 0.7rem',
-                  borderRadius: 6,
-                  border: `1px solid ${lang === l.code ? 'var(--accent)' : 'var(--border)'}`,
-                  background: lang === l.code ? 'var(--accent)' : 'transparent',
-                  color: lang === l.code ? '#1a1a1b' : 'var(--muted)',
-                  fontWeight: lang === l.code ? 700 : 400,
-                  cursor: 'pointer',
-                  fontSize: '0.78rem',
-                  fontFamily: 'var(--font-body)',
-                }}
-              >
-                {l.label}
-              </button>
-            ))}
+          <div style={{ marginTop: '0.8rem' }}>
+            <LanguageToggle />
           </div>
         </div>
 
@@ -133,11 +116,10 @@ export function SetupScreen() {
               <span style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--accent)' }}>{t('setup.enterCode')}</span>
             </div>
 
-            <div>
+            <div className="wave-group">
               <input
                 type="text"
                 inputMode="numeric"
-                placeholder="000000"
                 maxLength={6}
                 value={joinCode}
                 onChange={e => {
@@ -145,10 +127,17 @@ export function SetupScreen() {
                   setJoinCode(val)
                   if (val.length < 6) { setLookupState('idle'); setLookupDone(false); setInviterName(''); setMyName('') }
                 }}
-                style={{ letterSpacing: '0.4em', fontSize: '1.6rem', textAlign: 'center', fontFamily: 'monospace' }}
+                className="wave-input"
+                required
                 autoFocus
                 disabled={lookupState === 'searching'}
               />
+              <span className="wave-bar" />
+              <label className="wave-label">
+                {'000000'.split('').map((ch, i) => (
+                  <span key={i} className="label-char" style={{ '--index': i } as React.CSSProperties}>{ch}</span>
+                ))}
+              </label>
             </div>
 
             {lookupState === 'searching' && (
@@ -224,9 +213,7 @@ export function SetupScreen() {
               {t('setup.haveCode')}
             </button>
 
-            <div className="setup-divider" style={{ fontSize: '0.78rem' }}>{t('setup.orImport').replace('import existing key', 'create new account').replace('импортировать существующий ключ', 'создать новый аккаунт')}</div>
-
-            {/* ── CREATE NEW ── */}
+            {/* ── CREATE NEW (primary flow) ── */}
             <div className="setup-card">
               <div>
                 <div className="setup-label">{t('setup.nameLabel')}</div>
@@ -237,38 +224,56 @@ export function SetupScreen() {
                   value={setupName}
                   onChange={e => setSetupName(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleCreate()}
+                  autoFocus
                 />
               </div>
-              <div className="warning-box">{t('setup.keyWarning')}</div>
-              <button className="btn" onClick={handleCreate}>{t('setup.createBtn')}</button>
+              <div className="warning-box" style={{ fontSize: '0.82rem', lineHeight: 1.6 }}>{t('setup.keyWarning')}</div>
+              <button className="btn" style={{ width: '100%', padding: '0.9rem', fontSize: '1rem', fontWeight: 600 }} onClick={handleCreate}>{t('setup.createBtn')}</button>
             </div>
 
-            <div className="setup-divider">{t('setup.orImport')}</div>
-
-            <div className="setup-card">
-              <div>
-                <div className="setup-label">{t('setup.privkeyLabel')}</div>
-                <input
-                  type="text"
-                  placeholder="nsec1..."
-                  value={importKey}
-                  onChange={e => setImportKey(e.target.value)}
-                  style={{ fontSize: '0.78rem', fontFamily: 'monospace' }}
-                />
+            {/* ── RESTORE (collapsed by default) ── */}
+            {!showImport ? (
+              <button
+                onClick={() => setShowImport(true)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--muted)',
+                  fontSize: '0.8rem',
+                  cursor: 'pointer',
+                  padding: '0.5rem',
+                  textDecoration: 'underline',
+                  fontFamily: 'var(--font-body)',
+                }}
+              >
+                {t('setup.orImport')}
+              </button>
+            ) : (
+              <div className="setup-card" style={{ opacity: 0.9 }}>
+                <div>
+                  <div className="setup-label">{t('setup.privkeyLabel')}</div>
+                  <input
+                    type="text"
+                    placeholder="nsec1..."
+                    value={importKey}
+                    onChange={e => setImportKey(e.target.value)}
+                    style={{ fontSize: '0.78rem', fontFamily: 'monospace' }}
+                  />
+                </div>
+                <div>
+                  <div className="setup-label">{t('setup.nameLabel')}</div>
+                  <input
+                    type="text"
+                    placeholder={t('setup.importNamePlaceholder')}
+                    maxLength={30}
+                    value={importName}
+                    onChange={e => setImportName(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleImport()}
+                  />
+                </div>
+                <button className="btn secondary" onClick={handleImport}>{t('setup.importBtn')}</button>
               </div>
-              <div>
-                <div className="setup-label">{t('setup.nameLabel')}</div>
-                <input
-                  type="text"
-                  placeholder={t('setup.importNamePlaceholder')}
-                  maxLength={30}
-                  value={importName}
-                  onChange={e => setImportName(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleImport()}
-                />
-              </div>
-              <button className="btn secondary" onClick={handleImport}>{t('setup.importBtn')}</button>
-            </div>
+            )}
           </>
         )}
       </div>

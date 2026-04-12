@@ -33,16 +33,18 @@ export function Sidebar() {
     <div className={`sidebar${sidebarOpen ? ' open' : ''}`} id="sidebar">
       <div className="sidebar-header">
         <span className="sidebar-logo">
-          <img src="/logo-icon.svg" alt="Alina" className="sidebar-logo-img" />
           alina
           <span
             title={t('sidebar.relays', { n: String(relayCount), total: String(total) })}
+            aria-label={t('sidebar.relays', { n: String(relayCount), total: String(total) })}
+            role="status"
             style={{
               display: 'inline-block', width: 7, height: 7, borderRadius: '50%',
               background: dotColor, marginLeft: '0.4rem', verticalAlign: 'middle',
               boxShadow: relayCount > 0 ? `0 0 4px ${dotColor}` : 'none',
             }}
           />
+          <span className="sr-only">{t('sidebar.relays', { n: String(relayCount), total: String(total) })}</span>
         </span>
         {installAvailable && (
           <button
@@ -56,6 +58,7 @@ export function Sidebar() {
         <button
           className="btn icon-btn"
           title={t('sidebar.settings')}
+          aria-label={t('sidebar.settings')}
           onClick={() => setOpenModal('settings')}
         >
           <Settings size={17} />

@@ -4,6 +4,7 @@ import { useStore } from '../../store/useStore'
 import { useT } from '../../hooks/useT'
 import { Avatar } from '../ui/Avatar'
 import { lastMsgPreview } from '../../lib/utils'
+import { ConfirmDialog } from '../ui/ConfirmDialog'
 
 export function ChatList() {
   const contacts = useStore(s => s.contacts)
@@ -22,6 +23,7 @@ export function ChatList() {
   const [menuKey, setMenuKey] = useState<string | null>(null)
   const [renaming, setRenaming] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState<{ pubkey: string; name: string } | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const renameInputRef = useRef<HTMLInputElement>(null)
 
@@ -65,7 +67,12 @@ export function ChatList() {
 
   const handleDelete = (pubkey: string, name: string) => {
     setMenuKey(null)
-    if (confirm(t('list.deleteConfirm', { name }))) deleteContact(pubkey)
+    setDeleteTarget({ pubkey, name })
+  }
+
+  const confirmDelete = () => {
+    if (deleteTarget) deleteContact(deleteTarget.pubkey)
+    setDeleteTarget(null)
   }
 
   if (!hasAnything) {
@@ -161,6 +168,18 @@ export function ChatList() {
             )
           })}
         </>
+      )}
+
+      {deleteTarget && (
+        <ConfirmDialog
+          title={t('list.delete')}
+          message={t('list.deleteConfirm', { name: deleteTarget.name })}
+          confirmLabel={t('list.delete')}
+          cancelLabel={t('contact.cancelBtn')}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteTarget(null)}
+          danger
+        />
       )}
     </>
   )

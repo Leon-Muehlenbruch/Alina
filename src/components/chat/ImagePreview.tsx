@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { X, Send, Shield } from 'lucide-react'
 import { useT } from '../../hooks/useT'
+import { MAX_IMAGE_SIZE } from '../../lib/constants'
 
 interface ImagePreviewProps {
   file: File
@@ -8,7 +9,7 @@ interface ImagePreviewProps {
   onCancel: () => void
 }
 
-const TARGET_SIZE = 50_000 // ~50 KB target for base64 output (fits Nostr relay limits)
+const TARGET_SIZE = MAX_IMAGE_SIZE // use centralized constant for max base64 output size
 const MAX_DIMENSION = 800  // max width/height in pixels
 
 function compressImage(file: File): Promise<string> {

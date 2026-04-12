@@ -22,44 +22,35 @@ export function AppSplash({ onDone }: { onDone: () => void }) {
     >
       <style>{`
         .splash-loader {
+          display: block;
+          width: 84px;
+          height: 84px;
           position: relative;
-          font-size: 16px;
-          width: 5.5em;
-          height: 5.5em;
         }
-        .splash-loader:before {
-          content: '';
+        .splash-loader:before,
+        .splash-loader:after {
+          content: "";
           position: absolute;
-          transform: translate(-50%, -50%) rotate(45deg);
-          height: 100%;
-          width: 4px;
-          background: #B38463;
           left: 50%;
-          top: 50%;
+          bottom: 0;
+          width: 64px;
+          height: 64px;
+          border-radius: 50%;
+          background: #c8a97e;
+          transform: translate(-50%, -100%) scale(0);
+          animation: splashPush 2s infinite linear;
         }
         .splash-loader:after {
-          content: '';
-          position: absolute;
-          left: 0.2em;
-          bottom: 0.18em;
-          width: 1em;
-          height: 1em;
-          background-color: #c8a97e;
-          border-radius: 15%;
-          animation: rollingRock 2.5s cubic-bezier(.79, 0, .47, .97) infinite;
+          background: #B38463;
+          animation-delay: 1s;
         }
-        @keyframes rollingRock {
-          0%   { transform: translate(0, -1em) rotate(-45deg) }
-          5%   { transform: translate(0, -1em) rotate(-50deg) }
-          20%  { transform: translate(1em, -2em) rotate(47deg) }
-          25%  { transform: translate(1em, -2em) rotate(45deg) }
-          30%  { transform: translate(1em, -2em) rotate(40deg) }
-          45%  { transform: translate(2em, -3em) rotate(137deg) }
-          50%  { transform: translate(2em, -3em) rotate(135deg) }
-          55%  { transform: translate(2em, -3em) rotate(130deg) }
-          70%  { transform: translate(3em, -4em) rotate(217deg) }
-          75%  { transform: translate(3em, -4em) rotate(220deg) }
-          100% { transform: translate(0, -1em) rotate(-225deg) }
+        @keyframes splashPush {
+          0%, 50% {
+            transform: translate(-50%, 0%) scale(1);
+          }
+          100% {
+            transform: translate(-50%, -100%) scale(0);
+          }
         }
         .splash-text {
           opacity: 0;

@@ -3,12 +3,11 @@ import { useStore } from '../../store/useStore'
 import { useT } from '../../hooks/useT'
 import { encodeNpub, encodeNsec } from '../../lib/crypto'
 import { loadLogs, clearLogs as clearStoredLogs } from '../../lib/storage'
-import type { Lang } from '../../lib/i18n'
-
-const LANGS: { code: Lang; label: string }[] = [
-  { code: 'en', label: 'EN' },
-  { code: 'ru', label: 'RU' },
-]
+import { changeVaultPin, destroyVault } from '../../lib/vault'
+import { getWebRTCMode, setWebRTCMode, getTurnConfig, setTurnConfig } from '../../lib/webrtc'
+import type { WebRTCMode } from '../../lib/webrtc'
+import { LanguageToggle } from '../ui/LanguageToggle'
+import { ConfirmDialog } from '../ui/ConfirmDialog'
 
 export function SettingsModal() {
   const identity = useStore(s => s.identity)
@@ -16,8 +15,6 @@ export function SettingsModal() {
   const logout = useStore(s => s.logout)
   const setOpenModal = useStore(s => s.setOpenModal)
   const showStatus = useStore(s => s.showStatus)
-  const lang = useStore(s => s.lang)
-  const setLang = useStore(s => s.setLang)
   const autoTranslate = useStore(s => s.autoTranslate)
   const setAutoTranslate = useStore(s => s.setAutoTranslate)
   const allowExternalTranslation = useStore(s => s.allowExternalTranslation)
@@ -26,6 +23,23 @@ export function SettingsModal() {
 
   const [name, setName] = useState(identity?.name ?? '')
   const [showLogs, setShowLogs] = useState(false)
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const [keyVisible, setKeyVisible] = useState(false)
+
+  // WebRTC mode state
+  const [webrtcMode, setWebrtcModeLocal] = useState<WebRTCMode>(getWebRTCMode())
+  const [turnUrl, setTurnUrl] = useState(() => getTurnConfig().url)
+  const [turnUser, setTurnUser] = useState(() => getTurnConfig().username)
+  const [turnPass, setTurnPass] = useState(() => getTurnConfig().credential)
+  const [showTurnConfig, setShowTurnConfig] = useState(false)
+
+  // PIN change state
+  const [showPinChange, setShowPinChange] = useState(false)
+  const [oldPin, setOldPin] = useState('')
+  const [newPin, setNewPin] = useState('')
+  const [confirmNewPin, setConfirmNewPin] = useState('')
+  const [pinError, setPinError] = useState('')
+  const [pinLoading, setPinLoading] = useState(false)
 
   if (!identity) return null
 
@@ -40,13 +54,48 @@ export function SettingsModal() {
   }
 
   const handleLogout = () => {
-    if (!confirm(t('settings.signoutConfirm'))) return
+    setShowLogoutConfirm(true)
+  }
+
+  const confirmLogout = () => {
+    destroyVault()
     logout()
     close()
   }
 
   const copyToClipboard = (text: string, msg: string) => {
     navigator.clipboard.writeText(text).then(() => showStatus(msg, 2000)).catch(() => {})
+  }
+
+  const handlePinChange = async () => {
+    if (newPin.length < 4) {
+      setPinError('PIN must be at least 4 digits')
+      return
+    }
+    if (newPin !== confirmNewPin) {
+      setPinError('New PINs do not match')
+      setConfirmNewPin('')
+      return
+    }
+    setPinLoading(true)
+    setPinError('')
+    try {
+      const success = await changeVaultPin(oldPin, newPin)
+      if (success) {
+        showStatus('PIN changed', 2000)
+        setShowPinChange(false)
+        setOldPin('')
+        setNewPin('')
+        setConfirmNewPin('')
+      } else {
+        setPinError('Wrong current PIN')
+        setOldPin('')
+      }
+    } catch {
+      setPinError('Failed to change PIN')
+    } finally {
+      setPinLoading(false)
+    }
   }
 
   return (
@@ -68,60 +117,61 @@ export function SettingsModal() {
 
         <div>
           <div className="setup-label">{t('settings.privkeyLabel')}</div>
-          <div className="key-display" onClick={() => copyToClipboard(nsec, t('settings.privkeyCopied'))}>
-            {nsec}
+          <div
+            className="key-display"
+            onClick={() => keyVisible ? copyToClipboard(nsec, t('settings.privkeyCopied')) : setKeyVisible(true)}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}
+          >
+            <span>{keyVisible ? nsec : '••••••••••••••••••••••••'}</span>
+            <button
+              className="btn icon-btn"
+              onClick={e => { e.stopPropagation(); setKeyVisible(v => !v) }}
+              style={{ fontSize: '0.72rem', padding: '0.2rem 0.4rem' }}
+              aria-label={keyVisible ? 'Hide key' : 'Show key'}
+            >
+              {keyVisible ? '🙈' : '👁'}
+            </button>
           </div>
         </div>
 
         <div className="warning-box">{t('settings.keyWarning')}</div>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+        {/* Key Rotation */}
+        <button
+          className="btn secondary small"
+          style={{ fontSize: '0.78rem' }}
+          onClick={() => setOpenModal('key-migration')}
+        >
+          Rotate Key
+        </button>
+
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            className="alina-checkbox"
+            checked={autoTranslate}
+            onChange={() => setAutoTranslate(!autoTranslate)}
+          />
           <div>
             <div style={{ fontSize: '0.82rem', fontWeight: 500, color: 'var(--text)' }}>{t('translate.autoTranslate')}</div>
             <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.15rem' }}>{t('translate.autoTranslateSub')}</div>
           </div>
-          <button
-            onClick={() => setAutoTranslate(!autoTranslate)}
-            style={{
-              flexShrink: 0, width: 44, height: 24, borderRadius: 12,
-              background: autoTranslate ? 'var(--accent)' : 'var(--surface2)',
-              border: `1px solid ${autoTranslate ? 'var(--accent)' : 'var(--border)'}`,
-              cursor: 'pointer', position: 'relative', transition: 'background 0.2s',
-            }}
-          >
-            <span style={{
-              position: 'absolute', top: 3, left: autoTranslate ? 23 : 3,
-              width: 16, height: 16, borderRadius: '50%',
-              background: autoTranslate ? '#1a1a1b' : 'var(--muted)',
-              transition: 'left 0.2s',
-            }} />
-          </button>
-        </div>
+        </label>
 
         {autoTranslate && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                className="alina-checkbox"
+                checked={allowExternalTranslation}
+                onChange={() => setAllowExternalTranslation(!allowExternalTranslation)}
+              />
               <div>
                 <div style={{ fontSize: '0.82rem', fontWeight: 500, color: 'var(--text)' }}>{t('translate.externalFallback')}</div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.15rem' }}>{t('translate.externalFallbackSub')}</div>
               </div>
-              <button
-                onClick={() => setAllowExternalTranslation(!allowExternalTranslation)}
-                style={{
-                  flexShrink: 0, width: 44, height: 24, borderRadius: 12,
-                  background: allowExternalTranslation ? 'var(--accent)' : 'var(--surface2)',
-                  border: `1px solid ${allowExternalTranslation ? 'var(--accent)' : 'var(--border)'}`,
-                  cursor: 'pointer', position: 'relative', transition: 'background 0.2s',
-                }}
-              >
-                <span style={{
-                  position: 'absolute', top: 3, left: allowExternalTranslation ? 23 : 3,
-                  width: 16, height: 16, borderRadius: '50%',
-                  background: allowExternalTranslation ? '#1a1a1b' : 'var(--muted)',
-                  transition: 'left 0.2s',
-                }} />
-              </button>
-            </div>
+            </label>
             {allowExternalTranslation && (
               <div style={{
                 fontSize: '0.72rem', color: '#c97070', background: 'rgba(201,112,112,0.08)',
@@ -134,29 +184,199 @@ export function SettingsModal() {
           </div>
         )}
 
+        {/* WebRTC Mode Toggle */}
+        <div>
+          <div style={{ fontSize: '0.82rem', fontWeight: 500, color: 'var(--text)', marginBottom: '0.4rem' }}>
+            WebRTC Mode
+          </div>
+          <div style={{ display: 'flex', gap: '0.4rem' }}>
+            <button
+              className={`btn small ${webrtcMode === 'standard' ? '' : 'secondary'}`}
+              style={{ fontSize: '0.78rem', flex: 1 }}
+              onClick={() => {
+                setWebrtcModeLocal('standard')
+                setWebRTCMode('standard')
+              }}
+            >
+              ⚡ Standard (STUN)
+            </button>
+            <button
+              className={`btn small ${webrtcMode === 'private' ? '' : 'secondary'}`}
+              style={{ fontSize: '0.78rem', flex: 1 }}
+              onClick={() => {
+                setWebrtcModeLocal('private')
+                setWebRTCMode('private')
+                if (!turnUrl) setShowTurnConfig(true)
+              }}
+            >
+              🛡 Private (TURN)
+            </button>
+          </div>
+          <div style={{ fontSize: '0.72rem', color: 'var(--muted)', marginTop: '0.35rem', lineHeight: 1.5 }}>
+            {webrtcMode === 'standard'
+              ? 'Direct P2P — fast, but peers can see each other\'s IP address.'
+              : 'Relay via TURN server — hides your IP, requires a TURN server.'}
+          </div>
+
+          {webrtcMode === 'private' && !turnUrl && !showTurnConfig && (
+            <div style={{
+              fontSize: '0.72rem', color: '#c97070', background: 'rgba(201,112,112,0.08)',
+              border: '1px solid rgba(201,112,112,0.2)', borderRadius: 6,
+              padding: '0.5rem 0.65rem', lineHeight: 1.5, marginTop: '0.35rem',
+            }}>
+              ⚠ No TURN server configured. Private mode won't work without one.
+            </div>
+          )}
+
+          {(showTurnConfig || (webrtcMode === 'private' && turnUrl)) && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginTop: '0.5rem' }}>
+              <input
+                type="text"
+                placeholder="TURN URL (e.g. turn:relay.example.com:3478)"
+                value={turnUrl}
+                onChange={e => setTurnUrl(e.target.value)}
+                style={{ fontSize: '0.8rem', fontFamily: 'monospace' }}
+              />
+              <input
+                type="text"
+                placeholder="Username"
+                value={turnUser}
+                onChange={e => setTurnUser(e.target.value)}
+                style={{ fontSize: '0.8rem' }}
+              />
+              <input
+                type="password"
+                placeholder="Credential"
+                value={turnPass}
+                onChange={e => setTurnPass(e.target.value)}
+                style={{ fontSize: '0.8rem' }}
+              />
+              <div style={{ display: 'flex', gap: '0.4rem' }}>
+                <button
+                  className="btn small"
+                  style={{ fontSize: '0.78rem' }}
+                  onClick={() => {
+                    setTurnConfig({ url: turnUrl.trim(), username: turnUser.trim(), credential: turnPass })
+                    showStatus('TURN config saved', 2000)
+                    setShowTurnConfig(false)
+                  }}
+                  disabled={!turnUrl.trim()}
+                >
+                  Save TURN
+                </button>
+                {turnUrl && (
+                  <button
+                    className="btn secondary small"
+                    style={{ fontSize: '0.78rem' }}
+                    onClick={() => {
+                      setTurnUrl('')
+                      setTurnUser('')
+                      setTurnPass('')
+                      setTurnConfig({ url: '', username: '', credential: '' })
+                      setWebrtcModeLocal('standard')
+                      setWebRTCMode('standard')
+                      showStatus('TURN config removed', 2000)
+                      setShowTurnConfig(false)
+                    }}
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {webrtcMode === 'standard' && turnUrl && (
+            <button
+              className="btn secondary small"
+              style={{ fontSize: '0.72rem', marginTop: '0.35rem' }}
+              onClick={() => setShowTurnConfig(true)}
+            >
+              Edit TURN config
+            </button>
+          )}
+        </div>
+
+        {/* Vault PIN Management */}
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div>
+              <div style={{ fontSize: '0.82rem', fontWeight: 500, color: 'var(--text)' }}>Encryption PIN</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.15rem' }}>
+                Your data is encrypted with AES-256-GCM
+              </div>
+            </div>
+          </div>
+          {!showPinChange ? (
+            <button
+              className="btn secondary small"
+              style={{ marginTop: '0.5rem', fontSize: '0.78rem' }}
+              onClick={() => setShowPinChange(true)}
+            >
+              Change PIN
+            </button>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.5rem' }}>
+              <input
+                type="password"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="Current PIN"
+                value={oldPin}
+                onChange={e => { setOldPin(e.target.value.replace(/\D/g, '')); setPinError('') }}
+                style={{ fontSize: '0.85rem', letterSpacing: '0.2em', textAlign: 'center', fontFamily: 'monospace' }}
+                autoFocus
+              />
+              <input
+                type="password"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="New PIN (4-6 digits)"
+                value={newPin}
+                onChange={e => { setNewPin(e.target.value.replace(/\D/g, '')); setPinError('') }}
+                style={{ fontSize: '0.85rem', letterSpacing: '0.2em', textAlign: 'center', fontFamily: 'monospace' }}
+              />
+              <input
+                type="password"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="Confirm new PIN"
+                value={confirmNewPin}
+                onChange={e => { setConfirmNewPin(e.target.value.replace(/\D/g, '')); setPinError('') }}
+                onKeyDown={e => e.key === 'Enter' && handlePinChange()}
+                style={{ fontSize: '0.85rem', letterSpacing: '0.2em', textAlign: 'center', fontFamily: 'monospace' }}
+              />
+              {pinError && (
+                <div style={{ fontSize: '0.78rem', color: 'var(--danger)' }}>{pinError}</div>
+              )}
+              <div style={{ display: 'flex', gap: '0.4rem' }}>
+                <button
+                  className="btn small"
+                  onClick={handlePinChange}
+                  disabled={oldPin.length < 4 || newPin.length < 4 || confirmNewPin.length < 4 || pinLoading}
+                >
+                  {pinLoading ? 'Changing...' : 'Save'}
+                </button>
+                <button
+                  className="btn secondary small"
+                  onClick={() => {
+                    setShowPinChange(false)
+                    setOldPin('')
+                    setNewPin('')
+                    setConfirmNewPin('')
+                    setPinError('')
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
         <div>
           <div className="setup-label">{t('settings.language')}</div>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            {LANGS.map(l => (
-              <button
-                key={l.code}
-                onClick={() => setLang(l.code)}
-                style={{
-                  padding: '0.35rem 0.9rem',
-                  borderRadius: 6,
-                  border: `1px solid ${lang === l.code ? 'var(--accent)' : 'var(--border)'}`,
-                  background: lang === l.code ? 'var(--accent)' : 'var(--surface2)',
-                  color: lang === l.code ? '#1a1a1b' : 'var(--text)',
-                  fontWeight: lang === l.code ? 700 : 400,
-                  cursor: 'pointer',
-                  fontSize: '0.85rem',
-                  fontFamily: 'var(--font-body)',
-                }}
-              >
-                {l.label}
-              </button>
-            ))}
-          </div>
+          <LanguageToggle />
         </div>
 
         <div style={{ fontSize: '0.68rem', color: 'var(--muted)', textAlign: 'center', paddingTop: '0.5rem', letterSpacing: '0.05em' }}>
@@ -172,6 +392,17 @@ export function SettingsModal() {
       </div>
 
       {showLogs && <LogViewer onClose={() => setShowLogs(false)} />}
+      {showLogoutConfirm && (
+        <ConfirmDialog
+          title={t('settings.signout')}
+          message={t('settings.signoutConfirm')}
+          confirmLabel={t('settings.signout')}
+          cancelLabel={t('settings.close')}
+          onConfirm={confirmLogout}
+          onCancel={() => setShowLogoutConfirm(false)}
+          danger
+        />
+      )}
     </div>
   )
 }

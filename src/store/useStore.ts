@@ -3,6 +3,7 @@ import * as storage from '../lib/storage'
 import { createKeyPair, pubkeyFromPrivkey, decodeNsec, decodeNpub } from '../lib/crypto'
 import { MAX_MESSAGES_PER_CHAT } from '../lib/constants'
 import type { Lang } from '../lib/i18n'
+import type { PeerState } from '../lib/webrtc/types'
 
 export interface Identity {
   privkey: Uint8Array
@@ -32,6 +33,7 @@ export interface Message {
   detectedLang?: string
   ttl?: number        // time-to-live in seconds (e.g. 30, 300, 3600)
   expiresAt?: number  // absolute timestamp (ms) when the message should vanish
+  status?: 'sending' | 'sent' | 'failed' // delivery status for own messages
 }
 
 export interface ActiveChat {
@@ -48,6 +50,9 @@ interface AppState {
   importIdentity: (nsec: string, name: string) => void
   updateName: (name: string) => void
   logout: () => void
+
+  // Vault hydration
+  hydrate: () => void
 
   // Contacts
   contacts: Record<string, Contact>
@@ -78,6 +83,10 @@ interface AppState {
   relayCount: number
   setRelayCount: (n: number) => void
 
+  // WebRTC peer states
+  peerStates: Record<string, PeerState>
+  setPeerState: (pubkey: string, state: PeerState) => void
+
   // Language
   lang: Lang
   setLang: (lang: Lang) => void
@@ -91,6 +100,7 @@ interface AppState {
   allowExternalTranslation: boolean
   setAllowExternalTranslation: (v: boolean) => void
   setMessageTranslation: (chatId: string, ts: number, pubkey: string, translated: string, detectedLang: string) => void
+  updateMessageStatus: (chatId: string, ts: number, pubkey: string, status: 'sending' | 'sent' | 'failed') => void
 
   // UI
   openModal: string | null
@@ -104,8 +114,23 @@ interface AppState {
 }
 
 export const useStore = create<AppState>((set, get) => ({
-  // Identity
-  identity: storage.loadIdentity(),
+  // ── Identity (starts null — populated by hydrate() after vault unlock) ──
+
+  identity: null,
+
+  /**
+   * Hydrate store from decrypted storage cache.
+   * Call after vault unlock + loadDecryptedCache().
+   */
+  hydrate: () => {
+    set({
+      identity: storage.loadIdentity(),
+      contacts: storage.loadContacts(),
+      rooms: storage.loadRooms(),
+      messages: storage.loadMessages(),
+      unread: storage.loadUnread(),
+    })
+  },
 
   createIdentity: (name) => {
     const { privkey, pubkey } = createKeyPair()
@@ -118,12 +143,12 @@ export const useStore = create<AppState>((set, get) => ({
     const privkey = decodeNsec(nsec)
     const pubkey = pubkeyFromPrivkey(privkey)
     const identity: Identity = { privkey, pubkey, name }
-    // Load existing data (may have been used before)
+    storage.saveIdentity(identity)
+    // Also load any existing data associated with this identity
     const contacts = storage.loadContacts()
     const rooms = storage.loadRooms()
     const messages = storage.loadMessages()
     const unread = storage.loadUnread()
-    storage.saveIdentity(identity)
     set({ identity, contacts, rooms, messages, unread })
   },
 
@@ -148,7 +173,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   // Contacts
-  contacts: storage.loadContacts(),
+  contacts: {},
 
   addContact: (pubkey, name) => {
     const { contacts } = get()
@@ -201,7 +226,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   // Rooms
-  rooms: storage.loadRooms(),
+  rooms: {},
 
   addRoom: (hash, name) => {
     const { rooms, identity } = get()
@@ -223,7 +248,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   // Messages
-  messages: storage.loadMessages(),
+  messages: {},
 
   addMessage: (chatId, msg) => {
     const { messages } = get()
@@ -255,7 +280,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   // Unread
-  unread: storage.loadUnread(),
+  unread: {},
 
   clearUnread: (chatId) => {
     const { unread } = get()
@@ -276,6 +301,19 @@ export const useStore = create<AppState>((set, get) => ({
   relayCount: 0,
   setRelayCount: (n) => set({ relayCount: n }),
 
+  // WebRTC peer states
+  peerStates: {},
+  setPeerState: (pubkey, state) => {
+    const { peerStates } = get()
+    if (state === 'disconnected') {
+      const updated = { ...peerStates }
+      delete updated[pubkey]
+      set({ peerStates: updated })
+    } else {
+      set({ peerStates: { ...peerStates, [pubkey]: state } })
+    }
+  },
+
   // Ephemeral messages — remove all expired messages across all chats
   removeExpiredMessages: () => {
     const { messages } = get()
@@ -295,7 +333,7 @@ export const useStore = create<AppState>((set, get) => ({
     }
   },
 
-  // Language
+  // Language (non-sensitive — stays unencrypted in localStorage)
   lang: (localStorage.getItem('alina-lang') as Lang) || 'en',
   setLang: (lang) => { localStorage.setItem('alina-lang', lang); set({ lang }) },
 
@@ -304,6 +342,19 @@ export const useStore = create<AppState>((set, get) => ({
   setAutoTranslate: (v) => { localStorage.setItem('alina-autotranslate', String(v)); set({ autoTranslate: v }) },
   allowExternalTranslation: localStorage.getItem('alina-allow-external-translate') === 'true',
   setAllowExternalTranslation: (v) => { localStorage.setItem('alina-allow-external-translate', String(v)); set({ allowExternalTranslation: v }) },
+  updateMessageStatus: (chatId, ts, pubkey, status) => {
+    const { messages } = get()
+    const msgs = messages[chatId]
+    if (!msgs) return
+    const idx = msgs.findIndex(m => m.ts === ts && m.pubkey === pubkey)
+    if (idx === -1) return
+    const updated = [...msgs]
+    updated[idx] = { ...updated[idx], status }
+    const newMessages = { ...messages, [chatId]: updated }
+    storage.saveMessages(newMessages)
+    set({ messages: newMessages })
+  },
+
   setMessageTranslation: (chatId, ts, pubkey, translated, detectedLang) => {
     const { messages } = get()
     const msgs = messages[chatId]

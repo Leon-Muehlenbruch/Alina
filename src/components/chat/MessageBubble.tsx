@@ -1,5 +1,5 @@
 import { useState, useEffect, memo } from 'react'
-import { MapPin, Timer } from 'lucide-react'
+import { MapPin, Timer, Check, AlertCircle, Loader } from 'lucide-react'
 import type { Message } from '../../store/useStore'
 import { useStore } from '../../store/useStore'
 import { useT } from '../../hooks/useT'
@@ -12,9 +12,10 @@ interface MessageBubbleProps {
   isRoom: boolean
   senderName?: string
   onImageClick: (src: string) => void
+  onRetry?: (msg: Message) => void
 }
 
-export const MessageBubble = memo(function MessageBubble({ msg, isMine, isRoom, senderName, onImageClick }: MessageBubbleProps) {
+export const MessageBubble = memo(function MessageBubble({ msg, isMine, isRoom, senderName, onImageClick, onRetry }: MessageBubbleProps) {
   const lang = useStore(s => s.lang)
   const autoTranslate = useStore(s => s.autoTranslate)
   const allowExternalTranslation = useStore(s => s.allowExternalTranslation)
@@ -69,8 +70,23 @@ export const MessageBubble = memo(function MessageBubble({ msg, isMine, isRoom, 
     ? (msg.translated && !showOriginal ? msg.translated : msg.content)
     : msg.content
 
+  const statusIcon = isMine && msg.status === 'sending' ? (
+    <Loader size={10} className="spin-icon" style={{ opacity: 0.6 }} />
+  ) : isMine && msg.status === 'sent' ? (
+    <Check size={10} style={{ opacity: 0.5 }} />
+  ) : isMine && msg.status === 'failed' ? (
+    <button
+      className="msg-retry-btn"
+      onClick={(e) => { e.stopPropagation(); onRetry?.(msg) }}
+      title={t('msg.retry')}
+      aria-label={t('msg.retry')}
+    >
+      <AlertCircle size={12} />
+    </button>
+  ) : null
+
   return (
-    <div className={`msg-row ${isMine ? 'mine' : 'theirs'}${isEphemeral ? ' ephemeral' : ''}`}>
+    <div className={`msg-row ${isMine ? 'mine' : 'theirs'}${isEphemeral ? ' ephemeral' : ''}${msg.status === 'failed' ? ' failed' : ''}`}>
       {!isMine && isRoom && senderName && (
         <div className="msg-sender">{senderName}</div>
       )}
@@ -118,6 +134,7 @@ export const MessageBubble = memo(function MessageBubble({ msg, isMine, isRoom, 
             {ephemeralLabel}
           </span>
         )}
+        {statusIcon && <span className="msg-status-icon">{statusIcon}</span>}
       </div>
     </div>
   )
@@ -129,6 +146,8 @@ function LocationBubble({ content, isMine, openMapLabel }: { content: string; is
     const lat = data.lat
     const lng = data.lng
     if (typeof lat !== 'number' || typeof lng !== 'number') throw new Error('invalid')
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) throw new Error('out of range')
+    if (!isFinite(lat) || !isFinite(lng)) throw new Error('not finite')
     const mapUrl = `https://www.google.com/maps?q=${lat},${lng}`
     const previewUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=15&size=280x160&markers=color:red%7C${lat},${lng}&scale=2&format=jpg`
     return (

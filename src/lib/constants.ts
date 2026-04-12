@@ -22,3 +22,5 @@ export const SEAL_KIND = 13       // NIP-17: Seal (encrypted rumor)
 export const GIFT_WRAP_KIND = 1059 // NIP-17: Gift Wrap (encrypted seal)
 export const CHAT_MESSAGE_KIND = 14 // NIP-17: Chat message (rumor inside seal)
 export const ROOM_PRESENCE_KIND = 42 // Room join/presence announcement (public, non-sensitive)
+export const KEY_MIGRATION_KIND = 10051 // Custom kind: key migration/rotation event
+export const WEBRTC_SIGNAL_KIND = 25050 // Ephemeral kind: WebRTC signaling (SDP/ICE)

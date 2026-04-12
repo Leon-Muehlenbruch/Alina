@@ -61,13 +61,16 @@ export function AddContactModal() {
   const generateCode = async () => {
     if (!identity || !inviteName.trim()) return
     setPublishing(true)
-    const newCode = Math.floor(100000 + Math.random() * 900000).toString()
+    // Use crypto.getRandomValues for secure code generation
+    const arr = new Uint32Array(1)
+    crypto.getRandomValues(arr)
+    const newCode = String(100000 + (arr[0] % 900000)).padStart(6, '0')
     try {
       await publishInviteCode(identity.privkey, identity.pubkey, identity.name, newCode)
       setCode(newCode)
       startCountdown()
     } catch {
-      alert(t('contact.errorCreating'))
+      showStatus(t('contact.errorCreating'), 3000)
     } finally {
       setPublishing(false)
     }
@@ -168,12 +171,10 @@ export function AddContactModal() {
 
           <div className="modal-title">{t('contact.enterCode')}</div>
 
-          <div>
-            <div className="setup-label">{t('contact.codeLabel')}</div>
+          <div className="wave-group">
             <input
               type="text"
               inputMode="numeric"
-              placeholder={t('contact.codePlaceholder')}
               maxLength={6}
               value={joinCode}
               onChange={e => {
@@ -181,10 +182,17 @@ export function AddContactModal() {
                 setJoinCode(val)
                 if (val.length < 6) { setLookupState('idle'); setLookupDone(false); setInviterName(''); setJoinName('') }
               }}
-              style={{ letterSpacing: '0.5em', fontSize: '1.8rem', textAlign: 'center', fontFamily: 'monospace' }}
+              className="wave-input"
+              required
               autoFocus
               disabled={lookupState === 'searching'}
             />
+            <span className="wave-bar" />
+            <label className="wave-label">
+              {'123 456'.split('').map((ch, i) => (
+                <span key={i} className="label-char" style={{ '--index': i } as React.CSSProperties}>{ch}</span>
+              ))}
+            </label>
           </div>
 
           {lookupState === 'searching' && (
