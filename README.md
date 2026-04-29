@@ -78,3 +78,5 @@ Siehe [FEATURES.md](./FEATURES.md)
 ## Lizenz
 
 MIT
+
+<!-- push test from local clone -->
